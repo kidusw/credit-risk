@@ -1,0 +1,13 @@
+model,version,split,chosen,brier,ece,mean_pd,default_rate,citl,slope,intercept
+gbm_with_pricing,raw,valid,False,0.11595,0.0138,0.13121,0.14398,-0.01277,0.90847,-0.04074
+gbm_with_pricing,raw,test,False,0.12077,0.02762,0.1248,0.15241,-0.02762,0.94613,0.15553
+gbm_with_pricing,platt,valid,True,0.11574,0.00426,0.14396,0.14398,-2e-05,0.99947,-0.00066
+gbm_with_pricing,platt,test,True,0.1202,0.01566,0.13748,0.15241,-0.01494,1.04094,0.19733
+gbm_with_pricing,isotonic,valid,False,0.11561,0.00198,0.14398,0.14398,0.0,1.00087,0.00136
+gbm_with_pricing,isotonic,test,False,0.12022,0.01509,0.13737,0.15241,-0.01504,1.02576,0.1726
+scorecard_with_pricing,raw,valid,False,0.11706,0.00915,0.13526,0.14398,-0.00872,1.00441,0.08407
+scorecard_with_pricing,raw,test,False,0.12209,0.02473,0.1279,0.15241,-0.02451,1.06774,0.33542
+scorecard_with_pricing,platt,valid,True,0.11697,0.00371,0.14398,0.14398,0.0,0.99967,-0.00053
+scorecard_with_pricing,platt,test,True,0.12164,0.01689,0.1362,0.15241,-0.01621,1.06233,0.24478
+scorecard_with_pricing,isotonic,valid,False,0.11687,0.00138,0.14398,0.14398,0.0,1.00015,0.0003
+scorecard_with_pricing,isotonic,test,False,0.12167,0.0162,0.13621,0.15241,-0.0162,1.04647,0.21755

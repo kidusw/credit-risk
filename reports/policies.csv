@@ -1,0 +1,17 @@
+policy,objective,split,approval_rate,loans,lent,profit,return_on_lent,bad_rate
+approve all (LC's book),-,valid,1.0,147183,1860553925.0,142047552.384,0.0763,0.144
+approve all (LC's book),-,test,1.0,316243,4107951525.0,234613409.1823,0.0571,0.1524
+LC grades A-G,profit,valid,1.0,147183,1860553925.0,142047552.384,0.0763,0.144
+LC grades A-G,profit,test,1.0,316243,4107951525.0,234613409.1823,0.0571,0.1524
+LC grades A-B,return,valid,0.5426,79859,1065542125.0,84637061.7023,0.0794,0.0873
+LC grades A-B,return,test,0.5837,184578,2479714675.0,165291803.468,0.0667,0.093
+gbm_with_pricing: PD <= 0.402,profit,valid,0.99,145712,1842880600.0,142390104.6556,0.0773,0.1412
+gbm_with_pricing: PD <= 0.402,profit,test,0.9907,313301,4071154225.0,237867535.4104,0.0584,0.1494
+gbm_with_pricing: PD <= 0.156,return,valid,0.62,91254,1201397575.0,103639250.4188,0.0863,0.0873
+gbm_with_pricing: PD <= 0.156,return,test,0.6501,205592,2756232375.0,198048113.4793,0.0719,0.0937
+scorecard_with_pricing: PD <= 0.536,profit,valid,1.0,147183,1860553925.0,142047552.384,0.0763,0.144
+scorecard_with_pricing: PD <= 0.536,profit,test,1.0,316243,4107951525.0,234613409.1823,0.0571,0.1524
+scorecard_with_pricing: PD <= 0.131,return,valid,0.5,73592,1015151975.0,85337035.2464,0.0841,0.0793
+scorecard_with_pricing: PD <= 0.131,return,test,0.5414,171221,2390292125.0,167973064.2226,0.0703,0.0859
+gbm_with_pricing: expected profit > 0,untuned,valid,0.9909,145847,1845139575.0,142632839.7796,0.0773,0.1414
+gbm_with_pricing: expected profit > 0,untuned,test,0.9909,313366,4073193425.0,237307708.1097,0.0583,0.1497

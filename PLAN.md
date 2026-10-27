@@ -91,12 +91,12 @@ and down-cast dtypes to fit in 8 GB of RAM.
 
 ## Phase 4 — Calibration, expected loss, decision threshold
 
-- [ ] Calibrate PDs (isotonic vs Platt, fitted on validation); reliability curves per
+- [x] Calibrate PDs (isotonic vs Platt, fitted on validation); reliability curves per
       vintage
-- [ ] Expected loss = PD × LGD × EAD. LGD is estimated from charged-off loans' recoveries
+- [x] Expected loss = PD × LGD × EAD. LGD is estimated from charged-off loans' recoveries
       (target-side information, allowed here because it isn't a model input); EAD = loan
       amount
-- [ ] Profit curve: interest earned on good loans vs losses on bad ones → profit-
+- [x] Profit curve: interest earned on good loans vs losses on bad ones → profit-
       maximising approval threshold; approval rate vs bad rate trade-off
 - **Metrics:** Brier, expected calibration error, calibration slope/intercept; expected
   vs realised loss per vintage; profit at the chosen threshold vs "approve all" and vs

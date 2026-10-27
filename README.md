@@ -4,7 +4,8 @@ Predict the probability that a Lending Club loan defaults (PD) from what was kno
 was approved, then turn PDs into priced approve/decline decisions with reason codes,
 fairness checks and stability monitoring. See [PLAN.md](PLAN.md) for the eight phases.
 
-**Status:** Phases 1–3 done: data and leakage audit, WoE scorecard, monotonic LightGBM challenger.
+**Status:** Phases 1–4 done: data and leakage audit, WoE scorecard, monotonic LightGBM
+challenger, calibration with expected loss and an approval policy.
 
 ### Results so far (36-month loans, future vintages)
 
@@ -17,7 +18,13 @@ fairness checks and stability monitoring. See [PLAN.md](PLAN.md) for the eight p
 | **LightGBM (monotonic) + LC pricing (champion)** | **0.696** | **0.707** | **0.415** | **0.301** |
 
 The champion was chosen on validation AUC. Details:
-[Scorecard (Phase 2)](#scorecard-phase-2), [LightGBM challenger (Phase 3)](#lightgbm-challenger-phase-3).
+[Scorecard (Phase 2)](#scorecard-phase-2), [LightGBM challenger (Phase 3)](#lightgbm-challenger-phase-3),
+[Calibration, expected loss and approval policy (Phase 4)](#calibration-expected-loss-and-approval-policy-phase-4).
+
+**What the champion would have earned** on test (2015Q2–2016Q1), with every cutoff
+chosen on validation: a capital-constrained lender approving the 65% of Lending Club's
+loans with calibrated PD ≤ 15.6% earns **7.19% on the amount lent**, against 5.71% for the
+whole book and 6.67% for Lending Club's own best grade cutoff (A–B).
 
 ## Data and licence
 
@@ -41,6 +48,7 @@ uv run crisk data build           # ingest (if needed) -> filters -> split -> sc
 uv run crisk data load            # matured loans + vintage table into Postgres
 uv run crisk train scorecard      # Phase 2: WoE scorecards + baseline, logged to MLflow
 uv run crisk train gbm            # Phase 3: monotonic LightGBM, tuned on validation, vs scorecards
+uv run crisk decide               # Phase 4: calibration, expected loss, approval cutoffs
 uv run pytest
 ```
 
@@ -51,6 +59,7 @@ uv run pytest
 | `data load`: truncate + COPY in one transaction (idempotent) | Postgres `loans` (779,026 rows), `vintages` (82 rows) | 26 s |
 | `train scorecard`: two scorecards + baseline, evaluated per split, vintage, grade, term | `models/*.joblib`, `reports/scorecard_*`, `reports/iv_*`, MLflow runs (`mlflow.db`) | 107 s, peak RSS 1.2 GB |
 | `train gbm`: 12-config random search per variant (early stopping on validation), all models re-scored, paired bootstrap | `models/gbm_*.joblib`, `reports/gbm_*`, `reports/model_*`, `reports/auc_by_vintage.png` | 11 min, peak RSS 1.3 GB |
+| `decide`: calibrate on validation, loss and profit per vintage, cutoffs chosen on validation | `reports/calibration_*`, `reports/policies.csv`, `reports/profit_curves*`, `reports/reliability_test.png` | 75 s |
 
 ## Leakage audit
 
@@ -386,3 +395,116 @@ the decision to keep or drop it will be made there, on validation.
 
 MLflow experiment `crisk-gbm`: one run per variant, with the chosen hyperparameters, the
 best iteration, every metric, the AUC lifts, and the tuning and importance tables.
+
+## Calibration, expected loss and approval policy (Phase 4)
+
+[`src/crisk/models/calibration.py`](src/crisk/models/calibration.py),
+[`src/crisk/decision/`](src/crisk/decision). This phase covers the champion (LightGBM +
+pricing) and, for comparison, the scorecard + pricing, which is the model a bank would more
+likely ship. **Every choice is made on validation:** the calibration method, the PD
+cutoffs and the grade cutoffs. Test only reports what those choices would have earned.
+
+### Calibration
+
+Platt (a logistic fit on logit PD) and isotonic calibrators are both fitted on validation.
+The method is picked by **5-fold cross-validation within validation** (out-of-fold Brier):
+Platt for both models, by a hair (0.11575 vs 0.11577). Both are then refitted on all of
+validation.
+
+| Champion | Split | Brier | ECE | Mean PD − default rate | Slope | Mean PD | Default rate |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Raw | valid | 0.1160 | 0.0138 | −1.28 pp | 0.91 | 13.1% | 14.4% |
+| Raw | test | 0.1208 | 0.0276 | −2.76 pp | 0.95 | 12.5% | 15.2% |
+| **Platt** | valid | 0.1157 | 0.0043 | 0.00 pp | 1.00 | 14.4% | 14.4% |
+| **Platt** | test | **0.1202** | **0.0157** | **−1.49 pp** | 1.04 | 13.8% | 15.2% |
+
+ECE uses 20 equal-frequency bins. Slope is the coefficient of `y ~ logit(PD)`: 1 means
+well spread. Full table, including isotonic and the scorecard:
+[`reports/calibration_metrics.csv`](reports/calibration_metrics.csv).
+
+![Reliability on test: raw vs calibrated PD by decile](reports/reliability_test.png)
+
+Calibration roughly **halves the test calibration error** and keeps the slope near 1, so
+the ranking is untouched and the level is fixed. It can't fix everything. Validation is
+calibrated almost perfectly, but test still under-predicts by 1.5 points, because the
+book kept getting riskier after the calibration window (Phase 1's grade drift).
+
+### Expected vs realised loss
+
+**EL = PD × LGD × EAD.** EAD is the funded amount. LGD is the mean share of the funded
+amount never recovered on charged-off **train** loans, by grade and term: from 0.48 (A,
+36-month) to 0.68 (G, 60-month), in
+[`reports/lgd_by_grade_term.csv`](reports/lgd_by_grade_term.csv). Realised loss is the
+principal actually lost, net of recoveries. The outcome columns used here (payments,
+recoveries) measure results and estimate LGD only. They are never model inputs.
+
+| Issue quarter | Default rate | Mean PD (calibrated) | Realised loss | EL ÷ realised (raw) | EL ÷ realised (calibrated) |
+|---|---:|---:|---:|---:|---:|
+| 2014Q3 (valid) | 13.6% | 14.4% | $34.4M | 0.97 | 1.07 |
+| 2014Q4 (valid) | 14.5% | 14.5% | $44.6M | 0.93 | 1.02 |
+| 2015Q1 (valid) | 14.8% | 14.3% | $53.6M | 0.89 | 0.98 |
+| 2015Q2 (test) | 15.4% | 14.2% | $64.3M | 0.84 | 0.92 |
+| 2015Q3 (test) | 14.6% | 13.8% | $70.0M | 0.86 | 0.94 |
+| 2015Q4 (test) | 14.8% | 13.4% | $86.1M | 0.79 | 0.87 |
+| 2016Q1 (test) | 16.1% | 13.7% | $108.1M | 0.71 | 0.78 |
+| **Test total** | 15.2% | 13.8% | **$328.5M** | 0.79 | **0.87** |
+
+Over the whole validation window, expected loss matches realised loss (1.02 calibrated).
+On test it covers 87%, falling to 78% by 2016Q1: **a model calibrated on yesterday's
+vintages under-reserves when credit quality deteriorates.** A lender would need to watch
+this (PSI and realised-vs-expected monitoring are Phase 7), not assume the calibration
+holds. Per quarter: [`reports/expected_vs_realised_loss.csv`](reports/expected_vs_realised_loss.csv).
+
+### Approval policy
+
+**Realised profit** per loan = everything received (principal, interest, late fees,
+recoveries) − collection fees − amount lent. It's undiscounted, with no servicing fee and
+no cost of funds. Policies approve the lowest-PD share of applicants. Every loan in the
+data was already approved by Lending Club, so these policies **decline a subset of LC's
+book**, and "approve all" is LC's actual result.
+
+Two lenders, two objectives, both optimised on validation:
+
+- **Total profit** (capital is free and unlimited).
+- **Return on the amount lent** (capital is the constraint).
+
+![Profit and return on amount lent vs approval rate, test vintages](reports/profit_curves_test.png)
+
+| Policy (cutoff chosen on validation) | Objective | Test approval | Lent | Profit | Return on lent | Bad rate |
+|---|---|---:|---:|---:|---:|---:|
+| Approve all (LC's book) | – | 100% | $4,108M | $234.6M | 5.71% | 15.2% |
+| LC grades A–G (best grade cutoff) | profit | 100% | $4,108M | $234.6M | 5.71% | 15.2% |
+| Champion PD ≤ 0.402 | profit | 99.1% | $4,071M | **$237.9M** | 5.84% | 14.9% |
+| Champion: expected profit > 0 (untuned) | profit | 99.1% | $4,073M | $237.3M | 5.83% | 15.0% |
+| LC grades A–B (best grade cutoff) | return | 58.4% | $2,480M | $165.3M | 6.67% | 9.3% |
+| Scorecard PD ≤ 0.131 | return | 54.1% | $2,390M | $168.0M | 7.03% | 8.6% |
+| **Champion PD ≤ 0.156** | return | 65.0% | $2,756M | $198.0M | **7.19%** | 9.4% |
+
+Validation results and the scorecard's profit cutoff are in
+[`reports/policies.csv`](reports/policies.csv); every choice is in
+[`reports/decision_choices.csv`](reports/decision_choices.csv).
+
+What the numbers say:
+
+- **On total profit there is little to gain, judged on validation.** There, Lending
+  Club's rates priced the risk: every grade A–G returned 4.7–8.8% as a block, so the best
+  cutoff declines only the riskiest 1% (+$3.3M on test, +0.13 pp return). An untuned rule, "approve if (1 − PD) × good-loan return > PD ×
+  bad-loan loss" with sub-grade margins from train, lands in the same place. That's a good
+  sign the calibrated PDs are economically sensible.
+- **Then the riskiest grades stopped paying.** On test, grades E, F and G *lost* money: −0.1%, −4.5% and
+  −11.6% of the amount lent, against +4.7% to +8.8% on validation
+  ([`reports/return_by_grade.csv`](reports/return_by_grade.csv)). They're small, 4% of
+  test lending and a $1.6M loss, but the direction matters. That's why the test
+  profit curve peaks nearer 95% approval, and why a cutoff tuned on validation leaves
+  money on the table. Any policy fitted to the past inherits this risk. It's the strongest
+  argument in this project for monitoring realised loss by vintage (Phase 7).
+- **For a capital-constrained lender the model earns its keep.** At a similar approval
+  rate, the champion's cutoff returns **7.19% vs 6.67%** for LC's grades A–B. It lends
+  $276M more, makes **$32.7M more profit**, and has about the same bad rate (9.4% vs 9.3%).
+  The scorecard's return cutoff sits in between (7.03%).
+- **Approval rates drift with the PDs.** The cutoff approving 62% of validation approves
+  65% of test, because test PDs are still slightly low (above). A production policy would
+  monitor the approval rate and recalibrate.
+- **Not modelled:** cost of funds, servicing fees, discounting, prepayment timing, and how
+  declined applicants would have behaved (reject inference is Phase 7). These are
+  comparisons between policies on the same book, not a forecast of absolute returns.

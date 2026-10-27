@@ -143,6 +143,22 @@ def train_gbm(
     typer.echo(f"\nchampion (validation AUC): {champion}")
 
 
+@app.command()
+def decide() -> None:
+    """Calibrate PDs, expected vs realised loss, and the profit-maximising approval cutoff."""
+    from crisk.decision.run import run, save
+
+    res = run(PROCESSED_DIR / "model_table.parquet", PROCESSED_DIR / "outcomes.parquet", MODELS_DIR)
+    save(res, REPORTS_DIR)
+    typer.echo(f"calibration chosen on validation (out-of-fold Brier): {res.chosen}")
+    cal = res.calibration[res.calibration["split"] == "test"]
+    cols = ["model", "version", "brier", "ece", "citl", "slope", "mean_pd", "default_rate"]
+    typer.echo(cal[cols].round(4).to_string(index=False))
+    typer.echo(f"\ncutoffs chosen on validation: {res.cutoffs}")
+    cols = ["policy", "objective", "split", "approval_rate", "profit", "return_on_lent", "bad_rate"]
+    typer.echo(res.policies[cols].round(4).to_string(index=False))
+
+
 @data_app.command("audit")
 def data_audit() -> None:
     """Print the leakage audit (every column that is not a model input, and why)."""
