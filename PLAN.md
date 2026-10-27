@@ -65,13 +65,13 @@ and down-cast dtypes to fit in 8 GB of RAM.
 
 ## Phase 2 — Scorecard baseline (WoE + logistic regression)
 
-- [ ] Monotonic WoE binning per feature (optbinning), with information value (IV) for
+- [x] Monotonic WoE binning per feature (optbinning), with information value (IV) for
       feature screening
-- [ ] Logistic regression on WoE features → points scale (e.g. 600 points at 1:50 odds,
+- [x] Logistic regression on WoE features → points scale (e.g. 600 points at 1:50 odds,
       20 points to double the odds)
-- [ ] Scorecard table (bin → points) exported as CSV/markdown, which is human-readable
+- [x] Scorecard table (bin → points) exported as CSV/markdown, which is human-readable
       like a bank's
-- [ ] All runs logged to MLflow
+- [x] All runs logged to MLflow
 - **Metrics:** ROC-AUC, Gini, KS, PR-AUC, Brier on validation and test vintages; IV table
 - **Exit criteria:** scorecard documented and reproducible; numbers reported per vintage,
   not just pooled.

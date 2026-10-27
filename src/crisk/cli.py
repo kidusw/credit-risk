@@ -9,11 +9,14 @@ app = typer.Typer(
 )
 data_app = typer.Typer(help="Download and build datasets.", no_args_is_help=True)
 app.add_typer(data_app, name="data")
+train_app = typer.Typer(help="Train and evaluate PD models.", no_args_is_help=True)
+app.add_typer(train_app, name="train")
 
 RAW_DIR = Path("data/raw")
 INTERIM_DIR = Path("data/interim")
 PROCESSED_DIR = Path("data/processed")
 REPORTS_DIR = Path("reports")
+MODELS_DIR = Path("models")
 RAW_PARQUET = INTERIM_DIR / "accepted.parquet"
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -91,6 +94,25 @@ def data_load() -> None:
     vintages = pd.read_csv(REPORTS_DIR / "vintages.csv")
     report = load(get_engine(), loans, vintages)
     typer.echo(f"loans={report.loans:,} vintages={report.vintages}")
+
+
+@train_app.command("scorecard")
+def train_scorecard(
+    mlflow: Annotated[bool, typer.Option(help="Log runs to MLflow.")] = True,
+) -> None:
+    """WoE + logistic scorecard, with and without Lending Club's pricing columns."""
+    from crisk.models.train import log_mlflow, save, train_variants
+
+    results, baseline, champion = train_variants(PROCESSED_DIR / "model_table.parquet")
+    save(results, baseline, champion, MODELS_DIR, REPORTS_DIR)
+    if mlflow:
+        log_mlflow(results, baseline, champion, REPORTS_DIR)
+    for r in [*results, baseline]:
+        n_features = len(getattr(r.scorecard, "selected", ["sub_grade"]))
+        typer.echo(f"\n{r.name}: {n_features} features")
+        cols = ["n", "default_rate", "auc", "gini", "ks", "pr_auc", "brier"]
+        typer.echo(r.metrics[cols].round(4).to_string())
+    typer.echo(f"\nchampion (validation AUC): {champion}")
 
 
 @data_app.command("audit")

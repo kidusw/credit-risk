@@ -4,7 +4,17 @@ Predict the probability that a Lending Club loan defaults (PD) from what was kno
 was approved, then turn PDs into priced approve/decline decisions with reason codes,
 fairness checks and stability monitoring. See [PLAN.md](PLAN.md) for the eight phases.
 
-**Status:** Phase 1 (setup, data, leakage audit) done.
+**Status:** Phase 1 (setup, data, leakage audit) and Phase 2 (WoE scorecard baseline) done.
+
+### Results so far (36-month loans, future vintages)
+
+| Model | Valid AUC | Test AUC | Test Gini | Test KS |
+|---|---:|---:|---:|---:|
+| Lending Club sub-grade alone (baseline) | 0.669 | 0.684 | 0.368 | 0.269 |
+| WoE scorecard, borrower data only | 0.661 | 0.670 | 0.340 | 0.245 |
+| **WoE scorecard + LC pricing (champion)** | **0.681** | **0.693** | **0.386** | **0.280** |
+
+Details: [Scorecard (Phase 2)](#scorecard-phase-2).
 
 ## Data and licence
 
@@ -26,6 +36,7 @@ uv run crisk migrate
 uv run crisk data download        # 393 MB, cached in data/raw/
 uv run crisk data build           # ingest (if needed) -> filters -> split -> schema check
 uv run crisk data load            # matured loans + vintage table into Postgres
+uv run crisk train scorecard      # Phase 2: WoE scorecards + baseline, logged to MLflow
 uv run pytest
 ```
 
@@ -34,6 +45,7 @@ uv run pytest
 | `data ingest`: stream the CSV in 200k-row chunks, read only the 110 non-dropped columns, float32 numerics, append to parquet | `data/interim/accepted.parquet` (192 MB) | 50 s, peak RSS 308 MB |
 | `data build`: label, matured-vintage filter, derived features, time split, Pandera check | `data/processed/model_table.parquet`, `outcomes.parquet`, `reports/*.csv` | 32 s, peak RSS 1.8 GB; model table 284 MB in memory |
 | `data load`: truncate + COPY in one transaction (idempotent) | Postgres `loans` (779,026 rows), `vintages` (82 rows) | 26 s |
+| `train scorecard`: two scorecards + baseline, evaluated per split, vintage, grade, term | `models/*.joblib`, `reports/scorecard_*`, `reports/iv_*`, MLflow runs (`mlflow.db`) | 107 s, peak RSS 1.2 GB |
 
 ## Leakage audit
 
@@ -179,3 +191,106 @@ database on 5433. `loans` holds the loan-level facts (amounts, grade, purpose, o
 split, `source='lending_club'`). The full feature matrix stays in parquet. `vintages` is the
 table above at quarter level. A `crisk_test` database is created on first start for the
 integration tests.
+
+## Scorecard (Phase 2)
+
+A classic credit scorecard, built the way a bank would build one
+([`src/crisk/models/scorecard.py`](src/crisk/models/scorecard.py)):
+
+1. **Monotonic optimal binning** per feature with
+   [optbinning](https://github.com/guillermo-navas-palencia/optbinning). Numeric features
+   are constrained to a monotonic default-rate trend, with at most 8 bins and each bin at
+   least 5% of train. Missing values get their own bin.
+2. **Screening on information value (IV):** features with IV < 0.02 are dropped. Of any pair
+   of WoE features with |correlation| > 0.7, the one with lower IV is dropped.
+3. **Logistic regression on WoE.** A feature whose coefficient has the wrong sign (riskier
+   bins scored as safer) is removed, and the model is refit until every sign is right.
+4. **Points:** 600 points at 50:1 good:bad odds, and every 20 points doubles the odds. Each
+   bin's points are rounded, so a score is just a sum of whole numbers.
+
+Both variants are fitted on the same 315,600 train loans only:
+
+- **with_pricing**: all application-time features plus Lending Club's grade, sub-grade,
+  rate and installment. 18 features selected. `int_rate` and `grade` are dropped as
+  near-duplicates of `sub_grade` (|corr| 0.97).
+- **no_pricing**: borrower and bureau data only. 17 features selected.
+
+The champion is chosen on **validation AUC** (with_pricing). Test was scored once.
+
+### Results
+
+| Model | Split | AUC | Gini | KS | PR-AUC | Brier | Mean PD | Default rate |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| LC sub-grade baseline | valid | 0.669 | 0.338 | 0.250 | 0.232 | 0.1179 | 14.0% | 14.4% |
+| | test | 0.684 | 0.368 | 0.269 | 0.262 | 0.1227 | 13.3% | 15.2% |
+| Scorecard, no pricing | valid | 0.661 | 0.323 | 0.234 | 0.235 | 0.1184 | 13.6% | 14.4% |
+| | test | 0.670 | 0.340 | 0.245 | 0.256 | 0.1237 | 12.9% | 15.2% |
+| **Scorecard + pricing** | valid | **0.681** | **0.362** | **0.264** | **0.251** | **0.1171** | 13.5% | 14.4% |
+| | test | **0.693** | **0.386** | **0.280** | **0.277** | **0.1221** | 12.8% | 15.2% |
+
+The baseline gives each loan the train default rate of its Lending Club sub-grade.
+
+Reading these honestly:
+
+- **Lending Club's own grade is a strong baseline.** The borrower-only scorecard does
+  *not* beat it (−0.014 test AUC). Lending Club priced loans with data we don't have:
+  its full bureau file and its own models.
+- **Combining both helps**, by +0.009 test AUC over the baseline. The gain sits *within*
+  grades, where sub-grade alone can't rank. Test AUC within each grade (A–G) is 0.57–0.63
+  for the scorecard against 0.47–0.60 for the baseline
+  ([`reports/scorecard_by_grade.csv`](reports/scorecard_by_grade.csv)).
+- **Test AUC is higher than validation AUC.** Later vintages are more spread out (the grade
+  default rates diverge, see Phase 1), which makes ranking easier. It isn't a sign of a
+  better model.
+- **PDs drift low.** Mean predicted PD falls from 13.6% in 2014Q3 to 12.6% in 2016Q1, while
+  the realised default rate rises from 13.6% to 16.1%. Ranking holds up, but calibration
+  doesn't. That is Phase 4's job (recalibration on validation).
+- 60-month loans exist only in train: AUC 0.640 there, against 0.672 for 36-month loans
+  ([`reports/scorecard_by_term.csv`](reports/scorecard_by_term.csv)).
+
+### Per vintage (test and validation quarters, AUC)
+
+| Issue quarter | LC sub-grade | No pricing | + Pricing | Default rate | Mean PD (+ pricing) |
+|---|---:|---:|---:|---:|---:|
+| 2014Q3 (valid) | 0.657 | 0.664 | 0.678 | 13.6% | 13.6% |
+| 2014Q4 (valid) | 0.676 | 0.660 | 0.684 | 14.5% | 13.6% |
+| 2015Q1 (valid) | 0.673 | 0.661 | 0.681 | 14.8% | 13.4% |
+| 2015Q2 (test) | 0.677 | 0.666 | 0.686 | 15.4% | 13.4% |
+| 2015Q3 (test) | 0.681 | 0.671 | 0.692 | 14.6% | 12.9% |
+| 2015Q4 (test) | 0.682 | 0.668 | 0.691 | 14.8% | 12.5% |
+| 2016Q1 (test) | 0.694 | 0.675 | 0.700 | 16.1% | 12.6% |
+
+Validation is 2014Q3–2015Q1, test 2015Q2–2016Q1. Full table: [`reports/scorecard_by_vintage.csv`](reports/scorecard_by_vintage.csv).
+
+### The scorecard
+
+Human-readable, bin → points:
+[`reports/scorecard_with_pricing.md`](reports/scorecard_with_pricing.md), plus the CSV
+and the no-pricing version. An excerpt:
+
+| Feature | Bin | Default rate (train) | Points |
+|---|---|---:|---:|
+| sub_grade | A1–A4 | 4.9% | 50 |
+| sub_grade | C1, C2 | 15.4% | 30 |
+| sub_grade | E1–G5 | 30.6% | 16 |
+| term | 36 months | 12.8% | 33 |
+| term | 60 months | 25.4% | 20 |
+| fico_range_low | < 672.5 | 20.3% | 28 |
+| fico_range_low | ≥ 757.5 | 6.3% | 36 |
+| loan_to_income | < 0.13 | 11.2% | 35 |
+| loan_to_income | ≥ 0.39 | 24.7% | 21 |
+
+Test scores run from 489 to 617, with a median of 546. Default rate falls steadily by score
+decile, from 33.4% in the lowest decile to 3.3% in the highest.
+
+IV for every candidate feature, and why each one was dropped:
+[`reports/iv_with_pricing.csv`](reports/iv_with_pricing.csv). Of the borrower features,
+`term_months` (0.136), `fico_range_low` (0.110) and `loan_to_income` (0.101) are
+medium-strength. Everything else is weak (IV < 0.1). No feature reaches the
+"suspiciously strong" level (IV > 0.5) that would point to leakage.
+
+### Tracking
+
+Every run is logged to MLflow (`mlflow.db`, git-ignored) under the experiment
+`crisk-scorecard`, with parameters, per-split metrics, the points table and the IV table.
+Browse with `uv run mlflow ui --backend-store-uri sqlite:///mlflow.db`.
