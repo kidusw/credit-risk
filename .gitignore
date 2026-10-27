@@ -1,0 +1,18 @@
+# secrets
+.env
+.env.*
+!.env.example
+kaggle.json
+
+# data & artifacts
+/data/
+/models/
+mlruns/
+mlflow.db
+*.parquet
+
+# python
+__pycache__/
+.venv/
+.pytest_cache/
+.ruff_cache/
