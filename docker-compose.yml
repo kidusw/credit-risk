@@ -1,0 +1,54 @@
+# Own project name, so volumes and containers don't collide with other portfolio projects.
+name: crisk
+
+x-build: &build
+  context: .
+  secrets: [ca_bundle]
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: crisk
+      POSTGRES_PASSWORD: crisk
+      POSTGRES_DB: crisk
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crisk -d crisk"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot: migrate and build data, then exit (other services wait for it to complete).
+  bootstrap:
+    build:
+      <<: *build
+      args:
+        SYNC_ARGS: --no-default-groups --group train
+    image: crisk-bootstrap
+    command: ["crisk", "bootstrap"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://crisk:crisk@db:5432/crisk
+      KAGGLE_API_TOKEN: ${KAGGLE_API_TOKEN:-}
+    volumes:
+      - crisk-data:/app/data
+      - ./models:/app/models
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: [bootstrap]
+
+volumes:
+  pgdata:
+  crisk-data:
+
+secrets:
+  # Optional extra CA bundle for TLS-intercepting networks, e.g.
+  #   CA_BUNDLE=C:/path/to/corporate-bundle.pem docker compose up --build
+  # The default is an empty file, which the Dockerfile ignores.
+  ca_bundle:
+    file: ${CA_BUNDLE:-./docker/no-extra-ca.pem}

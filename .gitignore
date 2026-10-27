@@ -16,3 +16,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+mlartifacts/
+*.csv.gz
+reports/*.parquet

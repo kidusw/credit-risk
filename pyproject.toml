@@ -1,0 +1,52 @@
+[project]
+name = "crisk"
+version = "0.1.0"
+description = "Credit risk and loan default: PD, scorecards, expected loss, reason codes"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+# Runtime for the API image: no MLflow, no training libraries.
+dependencies = [
+    "alembic>=1.13",
+    "pandas>=2.2",
+    "psycopg[binary]>=3.2",
+    "pydantic-settings>=2.4",
+    "sqlalchemy>=2.0.30",
+    "typer>=0.12",
+]
+
+[project.scripts]
+crisk = "crisk.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.6",
+]
+# Data build, training, experiment tracking (bootstrap image).
+train = [
+    "kaggle>=2.2.5",
+    "pandera>=0.24",
+    "pyarrow>=19",
+]
+
+[tool.uv]
+# `uv sync` installs everything for local development; images pick only what they need.
+default-groups = ["dev", "train"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/crisk"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["postgres: needs a live PostgreSQL (TEST_DATABASE_URL)"]
