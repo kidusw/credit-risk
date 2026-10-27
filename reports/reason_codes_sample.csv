@@ -1,0 +1,21 @@
+id,pd,reason_1,reason_2,reason_3,reason_4
+48735718,0.1743,Too many accounts opened recently,Lending Club's risk grade and interest rate for the loan,Too many recent credit inquiries,Delinquency on credit accounts
+58832289,0.2766,Lending Club's risk grade and interest rate for the loan,Level of existing balances and credit limits,State of residence,Revolving credit utilisation too high
+59442002,0.2793,Too many accounts opened recently,Lending Club's risk grade and interest rate for the loan,Too many recent credit inquiries,State of residence
+49983818,0.1617,Income too low or not verified,Too many accounts opened recently,Revolving credit utilisation too high,Level of existing balances and credit limits
+65252469,0.2153,Lending Club's risk grade and interest rate for the loan,Too many accounts opened recently,Loan amount too high for income,Too many recent credit inquiries
+59259731,0.2019,Too many accounts opened recently,Length of credit history too short,Too many recent credit inquiries,Credit score too low
+48334448,0.2639,Lending Club's risk grade and interest rate for the loan,Too many accounts opened recently,Income too low or not verified,Too many recent credit inquiries
+66595696,0.1868,Income too low or not verified,State of residence,Debt-to-income ratio too high,Lending Club's risk grade and interest rate for the loan
+54258621,0.2731,Lending Club's risk grade and interest rate for the loan,Loan amount too high for income,Too many accounts opened recently,State of residence
+67237535,0.3046,Lending Club's risk grade and interest rate for the loan,Level of existing balances and credit limits,Loan amount too high for income,Income too low or not verified
+70702518,0.2686,Loan amount too high for income,Lending Club's risk grade and interest rate for the loan,Income too low or not verified,Too many accounts opened recently
+55069765,0.2923,Lending Club's risk grade and interest rate for the loan,Loan amount too high for income,Debt-to-income ratio too high,Income too low or not verified
+60637312,0.169,Too many accounts opened recently,Lending Club's risk grade and interest rate for the loan,Loan purpose,No mortgage or home ownership
+46640187,0.188,Lending Club's risk grade and interest rate for the loan,Length of employment too short,Too many accounts opened recently,Debt-to-income ratio too high
+70974342,0.2156,Lending Club's risk grade and interest rate for the loan,Income too low or not verified,Number or mix of credit accounts,No mortgage or home ownership
+51436604,0.1819,Too many accounts opened recently,Debt-to-income ratio too high,Length of credit history too short,Lending Club's risk grade and interest rate for the loan
+61953202,0.184,Too many accounts opened recently,State of residence,Income too low or not verified,Loan amount too high for income
+65866234,0.2048,Revolving credit utilisation too high,Loan amount too high for income,State of residence,Income too low or not verified
+75061255,0.1616,Length of employment too short,Income too low or not verified,Too many accounts opened recently,Length of credit history too short
+64310889,0.264,Lending Club's risk grade and interest rate for the loan,Revolving credit utilisation too high,Level of existing balances and credit limits,Length of employment too short

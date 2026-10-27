@@ -13,6 +13,12 @@ PRICING = names(Role.PRICING)  # grade, sub_grade, int_rate, installment
 # bureau fields Lending Club added in late 2015.
 MAX_TRAIN_MISSING = 0.95
 DERIVED = ["loan_to_income"]
+# Kept out of every model by a decision made on validation (README, Phase 5). The column stays
+# in the modelling table, so the fairness audit can still measure approval rates by state.
+EXCLUDED = {
+    "addr_state": "geography is a redlining proxy, not actionable for an applicant, and added "
+    "only +0.0012 validation AUC and +0.05 pp validation return (rule: +0.005 or +0.10 pp)",
+}
 
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
@@ -32,7 +38,8 @@ def available(train: pd.DataFrame, candidates: list[str]) -> list[str]:
 
 def feature_sets(train: pd.DataFrame) -> dict[str, list[str]]:
     """`with_pricing` uses Lending Club's grade and rate; `no_pricing` only borrower data."""
-    all_features = available(train, [*FEATURES, *DERIVED])
+    candidates = [c for c in [*FEATURES, *DERIVED] if c not in EXCLUDED]
+    all_features = available(train, candidates)
     return {
         "with_pricing": all_features,
         "no_pricing": [c for c in all_features if c not in PRICING],

@@ -1,0 +1,20 @@
+code,text,actionable,features
+R01,Credit score too low,True,fico_range_low sec_app_fico_range_low
+R02,Delinquency on credit accounts,True,delinq_2yrs mths_since_last_delinq acc_now_delinq delinq_amnt num_accts_ever_120_pd num_tl_120dpd_2m num_tl_30dpd num_tl_90g_dpd_24m pct_tl_nvr_dlq mths_since_recent_bc_dlq mths_since_recent_revol_delinq mths_since_last_major_derog sec_app_mths_since_last_major_derog
+R03,"Public records, collections or charge-offs on file",True,pub_rec mths_since_last_record pub_rec_bankruptcies tax_liens collections_12_mths_ex_med chargeoff_within_12_mths tot_coll_amt sec_app_chargeoff_within_12_mths sec_app_collections_12_mths_ex_med
+R04,Debt-to-income ratio too high,True,dti dti_joint
+R05,Loan amount too high for income,True,loan_amnt loan_to_income installment
+R06,Income too low or not verified,True,annual_inc annual_inc_joint verification_status verification_status_joint
+R07,Revolving credit utilisation too high,True,revol_util bc_util percent_bc_gt_75 bc_open_to_buy all_util il_util revol_bal revol_bal_joint max_bal_bc sec_app_revol_util
+R08,Too many recent credit inquiries,True,inq_last_6mths mths_since_recent_inq inq_fi inq_last_12m sec_app_inq_last_6mths
+R09,Too many accounts opened recently,True,acc_open_past_24mths num_tl_op_past_12m mo_sin_rcnt_tl mo_sin_rcnt_rev_tl_op mths_since_recent_bc mths_since_rcnt_il open_acc_6m open_il_12m open_il_24m open_rv_12m open_rv_24m
+R10,Length of credit history too short,True,credit_history_months mo_sin_old_il_acct mo_sin_old_rev_tl_op sec_app_credit_history_months
+R11,Number or mix of credit accounts,True,open_acc total_acc num_actv_bc_tl num_actv_rev_tl num_bc_sats num_bc_tl num_il_tl num_op_rev_tl num_rev_accts num_rev_tl_bal_gt_0 num_sats open_act_il sec_app_open_acc sec_app_open_act_il sec_app_num_rev_accts
+R12,Level of existing balances and credit limits,True,tot_cur_bal avg_cur_bal total_bal_ex_mort total_bal_il tot_hi_cred_lim total_rev_hi_lim total_bc_limit total_il_high_credit_limit total_cu_tl
+R13,No mortgage or home ownership,True,home_ownership mort_acc sec_app_mort_acc
+R14,Length of employment too short,True,emp_length_years
+R15,Loan term too long,True,term_months
+R16,Loan purpose,True,purpose
+R17,State of residence,True,addr_state
+R18,Lending Club's risk grade and interest rate for the loan,False,grade sub_grade int_rate
+R19,Listing and application type,False,initial_list_status application_type disbursement_method

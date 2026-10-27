@@ -8,6 +8,7 @@ labelled at its end, and the README carries the same numbers as a table.
 from itertools import pairwise
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 SURFACE = "#fcfcfb"
@@ -226,6 +227,125 @@ def profit_curves(curves: pd.DataFrame, cutoffs: pd.DataFrame, path: Path, split
         fontsize=12,
     )
     fig.subplots_adjust(left=0.07, right=0.98, top=0.86, bottom=0.27, wspace=0.22)
+    fig.savefig(path, facecolor=SURFACE)
+    plt.close(fig)
+    return path
+
+
+def shap_importance(importance: pd.DataFrame, path: Path, top: int = 15) -> Path:
+    """Mean |SHAP| (log-odds) per feature on test, the top features, largest at the top."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    t = importance.head(top).iloc[::-1]
+    fig, ax = plt.subplots(figsize=(7.5, 5.4), dpi=150)
+    fig.patch.set_facecolor(SURFACE)
+    colour = SERIES["gbm_with_pricing"][1]
+    ax.barh(t["feature"], t["mean_abs_shap"], color=colour, height=0.65)
+    for y, (v, share) in enumerate(zip(t["mean_abs_shap"], t["shap_share"], strict=True)):
+        ax.text(v, y, f"  {share:.0%}", va="center", fontsize=8, color=INK_2)
+    _style(
+        ax,
+        "What moves the champion's PD (test, mean |SHAP|)",
+        "Mean |SHAP value| (log-odds); label = share of the total",
+        "",
+    )
+    ax.grid(axis="y", visible=False)
+    ax.set_xlim(0, float(t["mean_abs_shap"].max()) * 1.15)
+    fig.tight_layout()
+    fig.savefig(path, facecolor=SURFACE)
+    plt.close(fig)
+    return path
+
+
+def shap_dependence(dep: pd.DataFrame, path: Path) -> Path:
+    """Small multiples: mean SHAP per value bin (numeric) or level (categorical)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    features = list(dict.fromkeys(dep["feature"]))
+    cols = 3
+    rows = -(-len(features) // cols)
+    fig, axes = plt.subplots(rows, cols, figsize=(11, 3.3 * rows), dpi=150, squeeze=False)
+    fig.patch.set_facecolor(SURFACE)
+    colour = SERIES["gbm_with_pricing"][1]
+    for ax, f in zip(axes.ravel(), features, strict=False):
+        d = dep[dep["feature"] == f]
+        if "level" in d and d["level"].notna().any():
+            d = d.sort_values("mean_shap")
+            show = pd.concat([d.head(5), d.tail(5)]).drop_duplicates()
+            ax.barh(show["level"], show["mean_shap"], color=colour, height=0.6)
+            ax.axvline(0, color=AXIS, linewidth=1)
+            _style(ax, f"{f} (5 lowest, 5 highest)", "mean SHAP (log-odds)", "")
+            ax.grid(axis="y", visible=False)
+        else:
+            present = d[d["value"].notna()]
+            ax.plot(
+                present["value"],
+                present["mean_shap"],
+                color=colour,
+                linewidth=2,
+                marker="o",
+                markersize=4,
+                markeredgecolor=SURFACE,
+            )
+            ax.axhline(0, color=AXIS, linewidth=1)
+            _style(ax, f, "feature value (bin median)", "mean SHAP (log-odds)")
+    for ax in axes.ravel()[len(features) :]:
+        ax.set_visible(False)
+    fig.suptitle(
+        "How each top feature moves the PD (test sample, 20 quantile bins)",
+        x=0.01,
+        ha="left",
+        color=INK,
+        fontsize=12,
+    )
+    fig.tight_layout()
+    fig.savefig(path, facecolor=SURFACE)
+    plt.close(fig)
+    return path
+
+
+def reason_waterfall(w: pd.DataFrame, path: Path, top: int = 8) -> Path:
+    """One declined applicant: base log-odds, then each reason's push, largest first."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    w = w.reindex(w["shap"].abs().sort_values(ascending=False).index)
+    head, rest = w.head(top), w.iloc[top:]
+    steps = [(f"{r.code} {r.text}", r.shap) for r in head.itertuples()]
+    if len(rest):
+        steps.append((f"{len(rest)} other reasons", float(rest["shap"].sum())))
+    base = float(w["base_value"].iloc[0])
+    fig, ax = plt.subplots(figsize=(9, 5.2), dpi=150)
+    fig.patch.set_facecolor(SURFACE)
+    up, down = "#eb6834", SERIES["gbm_with_pricing"][1]
+    level = base
+    labels = []
+    for y, (label, v) in enumerate(steps):
+        ax.barh(y, v, left=level, color=up if v > 0 else down, height=0.6)
+        ax.text(level + v, y, f" {v:+.2f}", va="center", fontsize=8, color=INK_2)
+        level += v
+        labels.append(label)
+    ax.axvline(base, color=AXIS, linewidth=1, linestyle="--")
+    ax.axvline(level, color=INK_2, linewidth=1)
+    ax.set_yticks(range(len(labels)), labels)
+    ax.invert_yaxis()
+    _style(
+        ax,
+        f"Why one test applicant was declined (raw PD {1 / (1 + np.exp(-level)):.1%},"
+        f" calibrated {float(w['pd'].iloc[0]):.1%})",
+        f"log-odds of default (dashed: average applicant, {base:.2f}; solid: this applicant)",
+        "",
+    )
+    ax.grid(axis="y", visible=False)
+    fig.tight_layout()
     fig.savefig(path, facecolor=SURFACE)
     plt.close(fig)
     return path

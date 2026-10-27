@@ -149,7 +149,7 @@ def decide() -> None:
     from crisk.decision.run import run, save
 
     res = run(PROCESSED_DIR / "model_table.parquet", PROCESSED_DIR / "outcomes.parquet", MODELS_DIR)
-    save(res, REPORTS_DIR)
+    save(res, REPORTS_DIR, MODELS_DIR)
     typer.echo(f"calibration chosen on validation (out-of-fold Brier): {res.chosen}")
     cal = res.calibration[res.calibration["split"] == "test"]
     cols = ["model", "version", "brier", "ece", "citl", "slope", "mean_pd", "default_rate"]
@@ -157,6 +157,32 @@ def decide() -> None:
     typer.echo(f"\ncutoffs chosen on validation: {res.cutoffs}")
     cols = ["policy", "objective", "split", "approval_rate", "profit", "return_on_lent", "bad_rate"]
     typer.echo(res.policies[cols].round(4).to_string(index=False))
+
+
+@app.command()
+def explain(
+    ablate: Annotated[
+        bool, typer.Option(help="Refit the champion with addr_state toggled.")
+    ] = True,
+) -> None:
+    """SHAP for the champion, reason codes for every decline, fairness, the addr_state call."""
+    from crisk.explain.run import run, save
+
+    res = run(
+        PROCESSED_DIR / "model_table.parquet",
+        PROCESSED_DIR / "outcomes.parquet",
+        MODELS_DIR,
+        ablate=ablate,
+    )
+    save(res, REPORTS_DIR)
+    typer.echo(res.importance.head(12).round(4).to_string(index=False))
+    typer.echo("\n" + res.reason_frequency.round(3).to_string(index=False))
+    typer.echo("\n" + res.reason_counts.to_string(index=False))
+    cols = ["policy", "attribute", "groups_used", "min_air", "min_air_group", "max_tpr_gap"]
+    typer.echo("\n" + res.fairness_summary[cols].round(3).to_string(index=False))
+    if ablate:
+        typer.echo("\n" + res.state_ablation.round(4).to_string(index=False))
+        typer.echo(f"\naddr_state decision (validation only): {res.state_decision}")
 
 
 @data_app.command("audit")

@@ -33,6 +33,7 @@ from crisk.models.calibration import (
 from crisk.models.features import load_model_table
 
 MODELS = ("gbm_with_pricing", "scorecard_with_pricing")
+DECISION_FILE = "decision.joblib"
 
 
 @dataclass
@@ -47,6 +48,7 @@ class DecisionResult:
     lgd: pd.DataFrame = None
     grade_returns: pd.DataFrame = None  # LC's own pricing, as it played out
     cutoffs: dict = field(default_factory=dict)
+    calibrators: dict = field(default_factory=dict)  # model -> chosen Calibrator (validation)
 
 
 def _load(model_table: Path, outcomes: Path) -> pd.DataFrame:
@@ -77,7 +79,10 @@ def run(model_table: Path, outcomes: Path, models_dir: Path) -> DecisionResult:
         cv_tables.append(cv.reset_index().assign(model=name))
         versions = {"raw": raw}
         for m in METHODS:  # both fitted on validation, reported for transparency
-            versions[m] = Calibrator(m).fit(raw[is_valid], y[is_valid]).transform(raw)
+            cal = Calibrator(m).fit(raw[is_valid], y[is_valid])
+            versions[m] = cal.transform(raw)
+            if m == method:
+                res.calibrators[name] = cal
         held[f"pd_{name}"] = versions[method]
         for version, p in versions.items():
             for split in ("valid", "test"):
@@ -189,8 +194,12 @@ def run(model_table: Path, outcomes: Path, models_dir: Path) -> DecisionResult:
     return res
 
 
-def save(res: DecisionResult, reports: Path) -> None:
+def save(res: DecisionResult, reports: Path, models_dir: Path | None = None) -> None:
     reports.mkdir(parents=True, exist_ok=True)
+    if models_dir is not None:  # the fitted policy, for Phase 5 and the API
+        joblib.dump(
+            {"calibrators": res.calibrators, "cutoffs": res.cutoffs}, models_dir / DECISION_FILE
+        )
     res.calibration.round(5).to_csv(reports / "calibration_metrics.csv", index=False)
     res.method_cv.round(5).to_csv(reports / "calibration_method_cv.csv", index=False)
     res.by_vintage.round(4).to_csv(reports / "expected_vs_realised_loss.csv", index=False)
