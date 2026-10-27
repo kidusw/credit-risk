@@ -26,6 +26,7 @@ dev = [
 train = [
     "kaggle>=2.2.5",
     "pandera>=0.24",
+    "psutil>=7.2.2",
     "pyarrow>=19",
 ]
 

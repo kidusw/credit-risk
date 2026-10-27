@@ -1,13 +1,20 @@
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
-app = typer.Typer(help="Credit risk and loan default: PD, scorecards, expected loss, reason codes.", no_args_is_help=True)
+app = typer.Typer(
+    help="Credit risk and loan default: PD, scorecards, expected loss, reason codes.",
+    no_args_is_help=True,
+)
 data_app = typer.Typer(help="Download and build datasets.", no_args_is_help=True)
 app.add_typer(data_app, name="data")
 
 RAW_DIR = Path("data/raw")
+INTERIM_DIR = Path("data/interim")
 PROCESSED_DIR = Path("data/processed")
+REPORTS_DIR = Path("reports")
+RAW_PARQUET = INTERIM_DIR / "accepted.parquet"
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -23,3 +30,72 @@ def migrate() -> None:
     from alembic.config import Config
 
     command.upgrade(Config(str(ROOT / "alembic.ini")), "head")
+
+
+@data_app.command("download")
+def data_download(force: Annotated[bool, typer.Option(help="Re-download.")] = False) -> None:
+    """Download the Lending Club accepted-loans file from Kaggle (393 MB)."""
+    from crisk.data.kaggle import download
+
+    for path in download(RAW_DIR, force=force):
+        typer.echo(f"{path} ({path.stat().st_size / 2**20:.0f} MB)")
+
+
+@data_app.command("ingest")
+def data_ingest(
+    chunksize: Annotated[int, typer.Option(help="CSV rows per chunk.")] = 200_000,
+) -> None:
+    """Stream the CSV into a column-pruned parquet file (data/interim)."""
+    from crisk.data.ingest import csv_to_parquet
+    from crisk.data.kaggle import ACCEPTED
+
+    report = csv_to_parquet(ACCEPTED.local_path(RAW_DIR), RAW_PARQUET, chunksize=chunksize)
+    typer.echo(
+        f"rows={report.rows_written:,} (footer rows dropped: {report.footer_rows}) "
+        f"chunks={report.chunks} peak_rss={report.peak_rss_mb:,.0f} MB "
+        f"parquet={report.parquet_mb:,.0f} MB"
+    )
+
+
+@data_app.command("build")
+def data_build() -> None:
+    """Target, matured-vintage filter, time split, schema check -> data/processed."""
+    import pandas as pd
+
+    from crisk.data.build import build, write_reports
+    from crisk.data.schema import validate
+
+    if not RAW_PARQUET.exists():
+        data_ingest()
+    report = build(RAW_PARQUET, PROCESSED_DIR)
+    validate(pd.read_parquet(PROCESSED_DIR / "model_table.parquet"))
+    write_reports(report, REPORTS_DIR)
+    for f in report.filters:
+        typer.echo(f"{f['step']:<36} rows={f['rows']:>9,} removed={f['removed']:>9,}")
+    typer.echo(report.splits.to_string(index=False))
+    typer.echo(f"model table in memory: {report.model_table_mb:,.0f} MB; reports in {REPORTS_DIR}/")
+
+
+@data_app.command("load")
+def data_load() -> None:
+    """Load matured loans and the vintage table into Postgres (idempotent)."""
+    import pandas as pd
+
+    from crisk.db import get_engine
+    from crisk.db.loader import load, loan_rows
+
+    loans = loan_rows(
+        pd.read_parquet(PROCESSED_DIR / "model_table.parquet"),
+        pd.read_parquet(PROCESSED_DIR / "outcomes.parquet"),
+    )
+    vintages = pd.read_csv(REPORTS_DIR / "vintages.csv")
+    report = load(get_engine(), loans, vintages)
+    typer.echo(f"loans={report.loans:,} vintages={report.vintages}")
+
+
+@data_app.command("audit")
+def data_audit() -> None:
+    """Print the leakage audit (every column that is not a model input, and why)."""
+    from crisk.data.columns import audit_markdown
+
+    typer.echo(audit_markdown())

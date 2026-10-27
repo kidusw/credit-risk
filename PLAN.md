@@ -39,24 +39,24 @@ and down-cast dtypes to fit in 8 GB of RAM.
 
 ## Phase 1 — Setup + data + leakage audit
 
-- [ ] Extract `_template/` from Project 1 (uv groups, src layout, Postgres + Alembic,
+- [x] Extract `_template/` from Project 1 (uv groups, src layout, Postgres + Alembic,
       Pandera, CI with pinned actions, Dockerfile with the CA-bundle secret, bootstrap
       pattern, `/data/` ignore rule) and start `credit-risk` from it
-- [ ] **Licence check:** confirm the Lending Club Kaggle mirror's licence and terms and
+- [x] **Licence check:** confirm the Lending Club Kaggle mirror's licence and terms and
       record them in the README. If it's unclear, document that it is used for research
       and demo only and never redistributed (the repo holds only the download script)
-- [ ] Kaggle download script (token from `.env`); stream the CSV in chunks into parquet,
+- [x] Kaggle download script (token from `.env`); stream the CSV in chunks into parquet,
       keeping only the needed columns, with typed dtypes and memory measured
-- [ ] **Leakage audit:** classify every column as *application-time* (kept) or
+- [x] **Leakage audit:** classify every column as *application-time* (kept) or
       *post-origination* (dropped: `total_pymnt*`, `recoveries`, `last_pymnt_d`,
       `last_fico_*`, `out_prncp*`, `collection_recovery_fee`, `hardship_*`,
       `debt_settlement_*`, …). The list is committed as code with a test, and the reason
       for each dropped column is in the README
-- [ ] Target definition + matured-vintage filter; vintage table of default rate by issue
+- [x] Target definition + matured-vintage filter; vintage table of default rate by issue
       quarter
-- [ ] Time-based split by issue date: train = older vintages, validation = next,
+- [x] Time-based split by issue date: train = older vintages, validation = next,
       test = most recent matured vintages (boundaries recorded)
-- [ ] Pandera schema for the modelling table; loans + vintages into Postgres
+- [x] Pandera schema for the modelling table; loans + vintages into Postgres
 - **Metrics:** rows kept/dropped at each filter, default rate by vintage and grade,
   missingness per feature
 - **Exit criteria:** `crisk data build` produces a processed parquet with no

@@ -1,0 +1,5 @@
+step,rows,removed
+raw loans,2260668,0
+resolved (paid off / charged off),1348099,912569
+matured vintage,779026,569073
+inside a split window,779026,0
