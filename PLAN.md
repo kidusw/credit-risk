@@ -78,11 +78,11 @@ and down-cast dtypes to fit in 8 GB of RAM.
 
 ## Phase 3 — Challenger: monotonic LightGBM
 
-- [ ] LightGBM with monotonic constraints on features where the risk direction is known
+- [x] LightGBM with monotonic constraints on features where the risk direction is known
       (e.g. higher DTI or more recent inquiries can't lower risk; higher income can't
       raise it)
-- [ ] Hyperparameters tuned on the validation vintages only; test scored once
-- [ ] Comparison vs the scorecard on future vintages, including per-vintage curves and
+- [x] Hyperparameters tuned on the validation vintages only; test scored once
+- [x] Comparison vs the scorecard on future vintages, including per-vintage curves and
       per-grade results
 - **Metrics:** same as Phase 2, plus AUC lift over the scorecard with a bootstrap
   confidence interval

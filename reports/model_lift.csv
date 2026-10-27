@@ -1,0 +1,9 @@
+challenger,incumbent,split,auc_challenger,auc_incumbent,lift,ci_low,ci_high,n_boot
+gbm_with_pricing,scorecard_with_pricing,valid,0.6963,0.6812,0.0151,0.0137,0.0167,200
+gbm_with_pricing,scorecard_with_pricing,test,0.7074,0.6928,0.0146,0.0137,0.0157,200
+gbm_no_pricing,scorecard_no_pricing,valid,0.6874,0.6614,0.0259,0.024,0.0282,200
+gbm_no_pricing,scorecard_no_pricing,test,0.6955,0.6701,0.0253,0.0239,0.0269,200
+gbm_with_pricing,baseline_lc_sub_grade,valid,0.6963,0.6691,0.0272,0.0253,0.0291,200
+gbm_with_pricing,baseline_lc_sub_grade,test,0.7074,0.684,0.0235,0.0219,0.0249,200
+gbm_no_pricing,baseline_lc_sub_grade,valid,0.6874,0.6691,0.0183,0.0153,0.0215,200
+gbm_no_pricing,baseline_lc_sub_grade,test,0.6955,0.684,0.0115,0.0094,0.0139,200

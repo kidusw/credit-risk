@@ -4,7 +4,7 @@ Predict the probability that a Lending Club loan defaults (PD) from what was kno
 was approved, then turn PDs into priced approve/decline decisions with reason codes,
 fairness checks and stability monitoring. See [PLAN.md](PLAN.md) for the eight phases.
 
-**Status:** Phase 1 (setup, data, leakage audit) and Phase 2 (WoE scorecard baseline) done.
+**Status:** Phases 1–3 done: data and leakage audit, WoE scorecard, monotonic LightGBM challenger.
 
 ### Results so far (36-month loans, future vintages)
 
@@ -12,9 +12,12 @@ fairness checks and stability monitoring. See [PLAN.md](PLAN.md) for the eight p
 |---|---:|---:|---:|---:|
 | Lending Club sub-grade alone (baseline) | 0.669 | 0.684 | 0.368 | 0.269 |
 | WoE scorecard, borrower data only | 0.661 | 0.670 | 0.340 | 0.245 |
-| **WoE scorecard + LC pricing (champion)** | **0.681** | **0.693** | **0.386** | **0.280** |
+| WoE scorecard + LC pricing | 0.681 | 0.693 | 0.386 | 0.280 |
+| LightGBM (monotonic), borrower data only | 0.687 | 0.696 | 0.391 | 0.284 |
+| **LightGBM (monotonic) + LC pricing (champion)** | **0.696** | **0.707** | **0.415** | **0.301** |
 
-Details: [Scorecard (Phase 2)](#scorecard-phase-2).
+The champion was chosen on validation AUC. Details:
+[Scorecard (Phase 2)](#scorecard-phase-2), [LightGBM challenger (Phase 3)](#lightgbm-challenger-phase-3).
 
 ## Data and licence
 
@@ -37,6 +40,7 @@ uv run crisk data download        # 393 MB, cached in data/raw/
 uv run crisk data build           # ingest (if needed) -> filters -> split -> schema check
 uv run crisk data load            # matured loans + vintage table into Postgres
 uv run crisk train scorecard      # Phase 2: WoE scorecards + baseline, logged to MLflow
+uv run crisk train gbm            # Phase 3: monotonic LightGBM, tuned on validation, vs scorecards
 uv run pytest
 ```
 
@@ -46,6 +50,7 @@ uv run pytest
 | `data build`: label, matured-vintage filter, derived features, time split, Pandera check | `data/processed/model_table.parquet`, `outcomes.parquet`, `reports/*.csv` | 32 s, peak RSS 1.8 GB; model table 284 MB in memory |
 | `data load`: truncate + COPY in one transaction (idempotent) | Postgres `loans` (779,026 rows), `vintages` (82 rows) | 26 s |
 | `train scorecard`: two scorecards + baseline, evaluated per split, vintage, grade, term | `models/*.joblib`, `reports/scorecard_*`, `reports/iv_*`, MLflow runs (`mlflow.db`) | 107 s, peak RSS 1.2 GB |
+| `train gbm`: 12-config random search per variant (early stopping on validation), all models re-scored, paired bootstrap | `models/gbm_*.joblib`, `reports/gbm_*`, `reports/model_*`, `reports/auc_by_vintage.png` | 11 min, peak RSS 1.3 GB |
 
 ## Leakage audit
 
@@ -294,3 +299,90 @@ medium-strength. Everything else is weak (IV < 0.1). No feature reaches the
 Every run is logged to MLflow (`mlflow.db`, git-ignored) under the experiment
 `crisk-scorecard`, with parameters, per-split metrics, the points table and the IV table.
 Browse with `uv run mlflow ui --backend-store-uri sqlite:///mlflow.db`.
+
+## LightGBM challenger (Phase 3)
+
+[`src/crisk/models/gbm.py`](src/crisk/models/gbm.py): LightGBM on every available
+application-time feature, with **monotonic constraints** wherever the direction of risk is
+settled credit practice:
+
+- **PD can only go up** with term, rate, sub-grade, DTI, loan-to-income, utilisation,
+  recent inquiries and new accounts, and derogatory marks.
+- **PD can only go down** with FICO, income, credit history length, months since the
+  latest inquiry or account, mortgages and the share of accounts never delinquent.
+
+31 of the 71 features are constrained. The rest, such as state, purpose and balances, are left free.
+Grade and sub-grade become ordinals (A1 = 0 … G5 = 34) so they can be constrained too. A
+test fits the model and checks on predictions that a higher FICO never raises the PD and
+a higher DTI never lowers it.
+
+**Protocol:** a 12-configuration seeded random search per variant (leaves, minimum leaf
+size, row and column sampling, L2). Each configuration is fitted on train, with early
+stopping on validation AUC. The best validation AUC wins. Test was scored once, for every
+model, after all choices were made. The search space is small and flat: validation AUC
+ranges over 0.694–0.696 (with pricing) and 0.685–0.687 (without). The model isn't
+sensitive to these settings, so a larger search isn't worth the laptop time. Results:
+[`reports/gbm_tuning_*.csv`](reports/gbm_tuning_with_pricing.csv).
+
+![ROC-AUC per issue quarter for the five models](reports/auc_by_vintage.png)
+
+### Results
+
+| Model | Split | AUC | Gini | KS | PR-AUC | Brier |
+|---|---|---:|---:|---:|---:|---:|
+| LC sub-grade baseline | valid | 0.669 | 0.338 | 0.250 | 0.232 | 0.1179 |
+| | test | 0.684 | 0.368 | 0.269 | 0.262 | 0.1227 |
+| Scorecard + pricing | valid | 0.681 | 0.362 | 0.264 | 0.251 | 0.1171 |
+| | test | 0.693 | 0.386 | 0.280 | 0.277 | 0.1221 |
+| LightGBM, borrower only | valid | 0.687 | 0.375 | 0.272 | 0.259 | 0.1165 |
+| | test | 0.696 | 0.391 | 0.284 | 0.280 | 0.1215 |
+| **LightGBM + pricing** | valid | **0.696** | **0.393** | **0.288** | **0.266** | **0.1160** |
+| | test | **0.707** | **0.415** | **0.301** | **0.292** | **0.1208** |
+
+**AUC lift with a 95% paired bootstrap interval** (200 resamples of the same loans for
+both models; [`reports/model_lift.csv`](reports/model_lift.csv)):
+
+| Challenger | vs | Valid lift | Test lift [95% CI] |
+|---|---|---:|---|
+| LightGBM + pricing | Scorecard + pricing | +0.015 | **+0.015** [0.014, 0.016] |
+| LightGBM, borrower only | Scorecard, borrower only | +0.026 | **+0.025** [0.024, 0.027] |
+| LightGBM + pricing | LC sub-grade | +0.027 | **+0.024** [0.022, 0.025] |
+| LightGBM, borrower only | LC sub-grade | +0.018 | **+0.012** [0.009, 0.014] |
+
+What this shows:
+
+- **LightGBM beats the scorecard on every held-out vintage**, by a stable margin
+  (chart above). This isn't one lucky quarter.
+- **Borrower data alone now beats Lending Club's grade.** The scorecard couldn't (−0.014),
+  but LightGBM can (+0.012, CI excludes zero). The extra signal is in interactions and
+  non-linear shapes that a one-dimensional WoE transform throws away.
+- **The gain is within grades**, where it matters for pricing. Test AUC within each grade
+  A–G is 0.60–0.66 for LightGBM + pricing, 0.57–0.63 for the scorecard and 0.47–0.60 for
+  sub-grade alone ([`reports/model_by_grade.csv`](reports/model_by_grade.csv)).
+- **Calibration still drifts.** Mean predicted PD on test is 12.5% against 15.2% realised,
+  slightly worse than the scorecard. Ranking is the model's job here; Phase 4 recalibrates
+  on validation.
+
+**What the trade-off costs:** the scorecard is 18 bins anyone can read and audit by hand.
+LightGBM is 264 trees. Phase 5 (SHAP and reason codes) is what makes the champion
+explainable to an applicant. A bank might still ship the scorecard and keep LightGBM as a
+challenger. This project carries both forward.
+
+### What drives it
+
+Gain share for the champion ([`reports/gbm_importance_with_pricing.csv`](reports/gbm_importance_with_pricing.csv)):
+`sub_grade` 26%, `addr_state` 9%, `int_rate` 8%, `loan_to_income` 5%, `grade` 5%,
+`annual_inc` 5%, `term_months` 4%. Without pricing, `term_months`, `addr_state`,
+`fico_range_low` and `loan_to_income` lead.
+
+**`addr_state` is a flag for Phase 5.** It's the second-largest feature by gain, although
+its IV was too low for the scorecard (0.011). LightGBM's native categorical splits can
+inflate gain on a 50-level feature, so I checked with a validation-only ablation:
+dropping it costs 0.0012 validation AUC with pricing and 0.0017 without. That's small but
+real, so it stays in for now. State is one of the fairness attributes Phase 5 audits, and
+the decision to keep or drop it will be made there, on validation.
+
+### Tracking
+
+MLflow experiment `crisk-gbm`: one run per variant, with the chosen hyperparameters, the
+best iteration, every metric, the AUC lifts, and the tuning and importance tables.

@@ -115,6 +115,34 @@ def train_scorecard(
     typer.echo(f"\nchampion (validation AUC): {champion}")
 
 
+@train_app.command("gbm")
+def train_gbm(
+    configs: Annotated[int, typer.Option(help="Random-search configurations per variant.")] = 12,
+    n_boot: Annotated[int, typer.Option(help="Bootstrap resamples for the AUC lift.")] = 200,
+    mlflow: Annotated[bool, typer.Option(help="Log runs to MLflow.")] = True,
+) -> None:
+    """Monotonic LightGBM challenger, tuned on validation, compared with the scorecards."""
+    from crisk.models import train_gbm as tg
+
+    gbms, tuning, results, lifts, champion = tg.run(
+        PROCESSED_DIR / "model_table.parquet", MODELS_DIR, n_configs=configs, n_boot=n_boot
+    )
+    tg.save(gbms, tuning, results, lifts, champion, MODELS_DIR, REPORTS_DIR)
+    if mlflow:
+        tg.log_mlflow(gbms, tuning, results, lifts, champion, REPORTS_DIR)
+    rows = [
+        {"model": name, "split": split, **r.metrics.loc[split, ["auc", "gini", "ks", "brier"]]}
+        for name, r in results.items()
+        for split in ("valid", "test")
+    ]
+    import pandas as pd
+
+    typer.echo(pd.DataFrame(rows).round(4).to_string(index=False))
+    cols = ["challenger", "incumbent", "split", "lift", "ci_low", "ci_high"]
+    typer.echo("\n" + lifts[cols].round(4).to_string(index=False))
+    typer.echo(f"\nchampion (validation AUC): {champion}")
+
+
 @data_app.command("audit")
 def data_audit() -> None:
     """Print the leakage audit (every column that is not a model input, and why)."""
