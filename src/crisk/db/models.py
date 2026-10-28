@@ -1,16 +1,18 @@
-"""Relational schema: matured Lending Club loans and the vintage default-rate table.
+"""Relational schema: matured Lending Club loans, the vintage table and API decisions.
 
 The full feature matrix lives in parquet; Postgres holds the loan-level facts the API,
 dashboard and reports query (amounts, grade, outcome, split) plus the vintage summary.
 """
 
-from datetime import date
+from datetime import date, datetime
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     Boolean,
     CheckConstraint,
     Date,
+    DateTime,
     Float,
     Index,
     Integer,
@@ -18,6 +20,7 @@ from sqlalchemy import (
     Numeric,
     SmallInteger,
     String,
+    func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -84,3 +87,35 @@ class Vintage(Base):
     loans: Mapped[int] = mapped_column(Integer)
     defaults: Mapped[int] = mapped_column(Integer)
     default_rate: Mapped[float] = mapped_column(Float)
+
+
+TRACKS = ("lending_club", "mobile_money")
+
+
+class Decision(Base):
+    """One row per scoring request the API answered (Phase 8): the audit trail."""
+
+    __tablename__ = "decisions"
+    __table_args__ = (
+        CheckConstraint("track IN ('lending_club', 'mobile_money')", name="track_valid"),
+        CheckConstraint("decision IN ('approve', 'decline')", name="decision_valid"),
+        CheckConstraint("pd >= 0 AND pd <= 1", name="pd_range"),
+        Index("ix_decisions_created_at", "created_at"),
+    )
+
+    # BIGINT in Postgres; INTEGER in SQLite (the tests), where only that autoincrements.
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    track: Mapped[str] = mapped_column(String(16))
+    model_version: Mapped[str] = mapped_column(String(64))
+    synthetic: Mapped[bool] = mapped_column(Boolean)
+    applicant_ref: Mapped[str | None] = mapped_column(String(64))
+    pd: Mapped[float] = mapped_column(Float)
+    score: Mapped[int] = mapped_column(Integer)
+    risk_band: Mapped[str] = mapped_column(String(2))
+    decision: Mapped[str] = mapped_column(String(8))
+    cutoff: Mapped[float] = mapped_column(Float)
+    reasons: Mapped[list] = mapped_column(JSON)
+    applicant: Mapped[dict] = mapped_column(JSON)

@@ -4,15 +4,19 @@ version = "0.1.0"
 description = "Credit risk and loan default: PD, scorecards, expected loss, reason codes"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-# Runtime for the API image: no MLflow, no training libraries.
+# Runtime for the API image: no MLflow, no training libraries. LightGBM is here because the
+# API scores with the native LightGBM boosters (and their TreeSHAP for reason codes).
 dependencies = [
     "alembic>=1.13",
+    "fastapi>=0.162.0",
+    "lightgbm>=4.7",
     "pandas>=2.2",
     "psycopg[binary]>=3.2",
     "pydantic-settings>=2.4",
     "scikit-learn>=1.9",
     "sqlalchemy>=2.0.30",
     "typer>=0.12",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
@@ -20,13 +24,13 @@ crisk = "crisk.cli:app"
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "pytest>=8.3",
     "ruff>=0.6",
 ]
 # Data build, training, experiment tracking (bootstrap image).
 train = [
     "kaggle>=2.2.5",
-    "lightgbm>=4.7",
     "matplotlib>=3.9",
     "mlflow>=3.0",
     "optbinning>=0.20",
@@ -35,9 +39,15 @@ train = [
     "pyarrow>=19",
 ]
 
+# Dashboard image: Streamlit and an HTTP client only; it talks to the API.
+dashboard = [
+    "httpx>=0.28.1",
+    "streamlit>=1.66.1",
+]
+
 [tool.uv]
 # `uv sync` installs everything for local development; images pick only what they need.
-default-groups = ["dev", "train"]
+default-groups = ["dev", "train", "dashboard"]
 
 [build-system]
 requires = ["hatchling"]

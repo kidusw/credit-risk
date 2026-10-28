@@ -300,3 +300,79 @@ def monitor_reject() -> None:
     reject.save(res, REPORTS_DIR)
     for table in (res.population, res.models, res.decisions, res.flips, res.extras["reject_psi"]):
         typer.echo(table.round(4).to_string(index=False) + "\n")
+
+
+@app.command("export")
+def export_models(
+    track: Annotated[str, typer.Option(help="lending_club, mobile_money or all.")] = "all",
+) -> None:
+    """Export the trained champions to models/serving/ for the API (no pickles served)."""
+    from crisk.serve import export as ex
+
+    out = ex.SERVING_DIR
+    if track in ("all", "lending_club"):
+        path = ex.export_lending_club(
+            MODELS_DIR, PROCESSED_DIR / "model_table.parquet", REPORTS_DIR, out
+        )
+        typer.echo(f"exported {path}")
+    if track in ("all", "mobile_money"):
+        path = ex.export_mobile_money(MODELS_DIR, MM_DIR / "features.parquet", REPORTS_DIR, out)
+        typer.echo(f"exported {path}")
+
+
+@app.command()
+def bootstrap(
+    mm_borrowers: Annotated[int, typer.Option(help="Synthetic borrowers if none exist.")] = 20_000,
+) -> None:
+    """One-shot setup for `docker compose up`: migrate, then make sure both tracks are exported.
+
+    Idempotent; per track, the first that applies wins:
+    1. models/serving/<track>.json exists: nothing to do.
+    2. The trained model exists locally (models/*.joblib and its data): export it.
+    3. Lending Club with KAGGLE_API_TOKEN: download, build, train, decide, export (~45 min).
+    4. Otherwise: Lending Club gets a DEMO model on synthetic LC-shaped loans (the real data
+       can't ship with the repo); the mobile-money track is generated, trained and exported
+       (it is synthetic by design).
+    """
+    from alembic import command
+    from alembic.config import Config
+
+    from crisk.config import get_settings
+    from crisk.serve import export as ex
+
+    out = ex.SERVING_DIR
+    typer.secho("1/3 migrate database", bold=True)
+    command.upgrade(Config(str(ROOT / "alembic.ini")), "head")
+
+    typer.secho("2/3 Lending Club model", bold=True)
+    table = PROCESSED_DIR / "model_table.parquet"
+    real = [MODELS_DIR / "gbm_with_pricing.joblib", MODELS_DIR / "decision.joblib", table]
+    token = get_settings().kaggle_api_token
+    if (out / "lending_club.json").exists():
+        typer.echo("already exported")
+    elif all(p.exists() for p in real):
+        typer.echo(f"exported {ex.export_lending_club(MODELS_DIR, table, REPORTS_DIR, out)}")
+    elif token is not None and token.get_secret_value():
+        typer.echo("Kaggle token set: running the real pipeline (download, build, train)")
+        data_download(force=False, rejected=False)
+        data_build()
+        train_scorecard(mlflow=False)
+        train_gbm(mlflow=False)
+        decide()
+        typer.echo(f"exported {ex.export_lending_club(MODELS_DIR, table, REPORTS_DIR, out)}")
+    else:
+        typer.echo("no Kaggle token: training the DEMO model on synthetic LC-shaped loans")
+        typer.echo(f"exported {ex.export_demo_lending_club(out)}")
+
+    typer.secho("3/3 mobile-money model (synthetic)", bold=True)
+    if (out / "mobile_money.json").exists():
+        typer.echo("already exported")
+    else:
+        if (
+            not (MODELS_DIR / "mm_model.joblib").exists()
+            or not (MM_DIR / "features.parquet").exists()
+        ):
+            mm_generate(n=mm_borrowers, seed=42)
+            mm_train()
+        path = ex.export_mobile_money(MODELS_DIR, MM_DIR / "features.parquet", REPORTS_DIR, out)
+        typer.echo(f"exported {path}")

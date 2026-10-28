@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     test_database_url: str | None = None
     kaggle_api_token: SecretStr | None = None
     mlflow_tracking_uri: str = "sqlite:///mlflow.db"
+    serving_dir: str = "models/serving"  # exported models the API serves (crisk export)
+    log_decisions: bool = True  # write every /score answer to the decisions table
 
 
 @lru_cache

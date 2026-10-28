@@ -12,7 +12,9 @@ pytestmark = pytest.mark.postgres
 
 
 def test_migration_creates_tables(migrated):
-    assert {"loans", "vintages", "alembic_version"} <= set(inspect(migrated).get_table_names())
+    assert {"loans", "vintages", "decisions", "alembic_version"} <= set(
+        inspect(migrated).get_table_names()
+    )
 
 
 def test_load_is_idempotent(migrated, lc_csv, tmp_path):
