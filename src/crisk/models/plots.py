@@ -232,7 +232,12 @@ def profit_curves(curves: pd.DataFrame, cutoffs: pd.DataFrame, path: Path, split
     return path
 
 
-def shap_importance(importance: pd.DataFrame, path: Path, top: int = 15) -> Path:
+def shap_importance(
+    importance: pd.DataFrame,
+    path: Path,
+    top: int = 15,
+    title: str = "What moves the champion's PD (test, mean |SHAP|)",
+) -> Path:
     """Mean |SHAP| (log-odds) per feature on test, the top features, largest at the top."""
     import matplotlib
 
@@ -248,7 +253,7 @@ def shap_importance(importance: pd.DataFrame, path: Path, top: int = 15) -> Path
         ax.text(v, y, f"  {share:.0%}", va="center", fontsize=8, color=INK_2)
     _style(
         ax,
-        "What moves the champion's PD (test, mean |SHAP|)",
+        title,
         "Mean |SHAP value| (log-odds); label = share of the total",
         "",
     )
@@ -345,6 +350,40 @@ def reason_waterfall(w: pd.DataFrame, path: Path, top: int = 8) -> Path:
         "",
     )
     ax.grid(axis="y", visible=False)
+    fig.tight_layout()
+    fig.savefig(path, facecolor=SURFACE)
+    plt.close(fig)
+    return path
+
+
+def rule_recovery(recovery: pd.DataFrame, path: Path) -> Path:
+    """Synthetic track: each true driver's share of the hidden rule vs of the model's |SHAP|."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    t = recovery.iloc[::-1]
+    y = np.arange(len(t))
+    fig, ax = plt.subplots(figsize=(7.5, 4.8), dpi=150)
+    fig.patch.set_facecolor(SURFACE)
+    h = 0.38
+    true_c, model_c = SERIES["scorecard_with_pricing"][1], SERIES["gbm_with_pricing"][1]
+    ax.barh(y + h / 2, t["true_share"], h, color=true_c, label="hidden rule (truth)", hatch="//")
+    ax.barh(y - h / 2, t["model_share"], h, color=model_c, label="model (mean |SHAP|)")
+    for yi, (a, b) in enumerate(zip(t["true_share"], t["model_share"], strict=True)):
+        ax.text(a, yi + h / 2, f" {a:.0%}", va="center", fontsize=7.5, color=INK_2)
+        ax.text(b, yi - h / 2, f" {b:.0%}", va="center", fontsize=7.5, color=INK_2)
+    ax.set_yticks(y, t["driver"].str.replace("_", " "))
+    _style(
+        ax,
+        "SYNTHETIC track: did the model find the hidden rule? (test cohort)",
+        "Share of total weight",
+        "",
+    )
+    ax.grid(axis="y", visible=False)
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    ax.set_xlim(0, float(t[["true_share", "model_share"]].max().max()) * 1.2)
     fig.tight_layout()
     fig.savefig(path, facecolor=SURFACE)
     plt.close(fig)

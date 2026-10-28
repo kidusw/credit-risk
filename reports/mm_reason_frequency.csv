@@ -1,0 +1,11 @@
+code,text,actionable,first_reason_share,in_top_reasons_share,source
+M02,Income varies a lot from month to month,True,0.3476,0.6770,synthetic
+M04,Wallet balance often low,True,0.2795,0.4952,synthetic
+M05,Loan amount high compared with wallet inflows,True,0.1629,0.5483,synthetic
+M03,Spending close to or above income,True,0.0777,0.5062,synthetic
+M01,Income is irregular or seasonal,True,0.0749,0.4877,synthetic
+M09,Low wallet inflows,True,0.0321,0.4531,synthetic
+M07,No regular equb or iddir contributions,True,0.0207,0.3761,synthetic
+M10,"Airtime, bill and transaction pattern",True,0.0039,0.1697,synthetic
+M06,Recent fall in income,True,0.0007,0.1701,synthetic
+M08,Few people sending or receiving transfers,True,0.0000,0.0948,synthetic

@@ -194,7 +194,11 @@ BY_CODE = {r.code: r for r in REASONS}
 FEATURE_REASON = {f: r.code for r in REASONS for f in r.features}
 
 
-def code_map() -> pd.DataFrame:
+def feature_reason(reasons: list[Reason]) -> dict[str, str]:
+    return {f: r.code for r in reasons for f in r.features}
+
+
+def code_map(reasons: list[Reason] = REASONS) -> pd.DataFrame:
     return pd.DataFrame(
         [
             {
@@ -203,26 +207,29 @@ def code_map() -> pd.DataFrame:
                 "actionable": r.actionable,
                 "features": " ".join(r.features),
             }
-            for r in REASONS
+            for r in reasons
         ]
     )
 
 
-def grouped(phi: pd.DataFrame) -> pd.DataFrame:
+def grouped(phi: pd.DataFrame, reasons: list[Reason] = REASONS) -> pd.DataFrame:
     """Per-loan reason weights: the sum of each reason's features' SHAP values."""
-    unmapped = sorted(set(phi.columns) - set(FEATURE_REASON))
+    mapping = feature_reason(reasons)
+    unmapped = sorted(set(phi.columns) - set(mapping))
     if unmapped:
         raise KeyError(f"features without a reason code: {unmapped}")
-    return phi.T.groupby(phi.columns.map(FEATURE_REASON)).sum().T
+    return phi.T.groupby(phi.columns.map(mapping)).sum().T
 
 
-def reason_codes(phi: pd.DataFrame, max_reasons: int = MAX_REASONS) -> pd.DataFrame:
+def reason_codes(
+    phi: pd.DataFrame, max_reasons: int = MAX_REASONS, reasons: list[Reason] = REASONS
+) -> pd.DataFrame:
     """Top reasons (largest positive weight first) for every row of `phi`.
 
     Returns one row per loan: reason_1..k codes and weights, plus `n_reasons`. Call it on
     declined applicants; it raises if any row has no reason pushing its PD up.
     """
-    weights = grouped(phi)
+    weights = grouped(phi, reasons)
     w = weights.to_numpy()
     order = np.argsort(-w, axis=1, kind="stable")[:, :max_reasons]
     top = np.take_along_axis(w, order, axis=1)
@@ -240,15 +247,16 @@ def reason_codes(phi: pd.DataFrame, max_reasons: int = MAX_REASONS) -> pd.DataFr
     return out
 
 
-def describe(codes: pd.DataFrame) -> pd.DataFrame:
+def describe(codes: pd.DataFrame, reasons: list[Reason] = REASONS) -> pd.DataFrame:
     """Reason codes as plain-language text, one column per rank."""
+    by_code = {r.code: r for r in reasons}
     out = pd.DataFrame(index=codes.index)
     for col in [c for c in codes.columns if c.startswith("reason_")]:
-        out[col] = codes[col].map(lambda c: BY_CODE[c].text if pd.notna(c) else None)
+        out[col] = codes[col].map(lambda c: by_code[c].text if pd.notna(c) else None)
     return out
 
 
-def frequency(codes: pd.DataFrame) -> pd.DataFrame:
+def frequency(codes: pd.DataFrame, reasons: list[Reason] = REASONS) -> pd.DataFrame:
     """How often each reason is given first, and anywhere in the top reasons."""
     n = len(codes)
     rank_cols = [c for c in codes.columns if c.startswith("reason_")]
@@ -263,7 +271,7 @@ def frequency(codes: pd.DataFrame) -> pd.DataFrame:
                 "first_reason_share": first.get(r.code, 0) / n,
                 "in_top_reasons_share": anywhere.get(r.code, 0) / n,
             }
-            for r in REASONS
+            for r in reasons
         ]
     )
     return table.sort_values("first_reason_share", ascending=False, ignore_index=True)

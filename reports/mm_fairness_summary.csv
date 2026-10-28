@@ -1,0 +1,9 @@
+policy,attribute,groups,groups_used,min_air,min_air_group,groups_below_0_8,max_tpr_gap,max_abs_citl,approval_spread,default_rate_spread,source
+champion PD <= 0.085,gender,2,2,0.9686,male,0,-0.0172,0.0077,0.0127,0.0007,synthetic
+champion PD <= 0.085,region,8,8,0.5488,Afar,6,-0.2511,0.0391,0.2432,0.0805,synthetic
+champion PD <= 0.085,urban_rural,2,2,0.5115,rural,1,-0.2672,0.0134,0.2634,0.0680,synthetic
+champion PD <= 0.085,occupation,4,4,0.1536,farmer,3,-0.6479,0.0216,0.6423,0.1310,synthetic
+rule of thumb,gender,2,2,0.9944,male,0,-0.0038,0.0077,0.0043,0.0007,synthetic
+rule of thumb,region,8,8,0.8885,Somali,0,-0.0676,0.0391,0.0911,0.0805,synthetic
+rule of thumb,urban_rural,2,2,0.9789,rural,0,-0.0135,0.0134,0.0164,0.0680,synthetic
+rule of thumb,occupation,4,4,0.9408,farmer,0,-0.0372,0.0216,0.0467,0.1310,synthetic

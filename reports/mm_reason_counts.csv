@@ -1,0 +1,7 @@
+split,n_reasons,loans,source
+test,4,2748,synthetic
+test,3,53,synthetic
+test,2,4,synthetic
+valid,4,2577,synthetic
+valid,3,36,synthetic
+valid,2,2,synthetic

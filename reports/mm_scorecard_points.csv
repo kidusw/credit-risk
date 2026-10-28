@@ -1,0 +1,92 @@
+feature,bin,count,share,default_rate,woe,points,source
+inflow_cv,"(-inf, 0.14)",836,0.0751,0.0311,1.4685,72,synthetic
+inflow_cv,"[0.14, 0.18)",944,0.0849,0.0646,0.7020,60,synthetic
+inflow_cv,"[0.18, 0.25)",1705,0.1533,0.0704,0.6104,59,synthetic
+inflow_cv,"[0.25, 0.29)",939,0.0844,0.0895,0.3498,55,synthetic
+inflow_cv,"[0.29, 0.39)",1807,0.1624,0.1079,0.1417,52,synthetic
+inflow_cv,"[0.39, 0.44)",611,0.0549,0.1571,-0.2907,45,synthetic
+inflow_cv,"[0.44, 0.92)",3232,0.2905,0.1742,-0.4143,43,synthetic
+inflow_cv,"[0.92, inf)",1051,0.0945,0.2055,-0.6183,40,synthetic
+inflow_cv,Special,0,0.0000,0.0000,0.0000,49,synthetic
+inflow_cv,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+inflow_outflow_ratio,"(-inf, 0.94)",567,0.0510,0.2875,-1.0628,37,synthetic
+inflow_outflow_ratio,"[0.94, 0.98)",1130,0.1016,0.1894,-0.5164,44,synthetic
+inflow_outflow_ratio,"[0.98, 1.02)",1867,0.1678,0.1435,-0.1843,47,synthetic
+inflow_outflow_ratio,"[1.02, 1.08)",2998,0.2695,0.1197,0.0244,50,synthetic
+inflow_outflow_ratio,"[1.08, 1.09)",871,0.0783,0.1068,0.1536,51,synthetic
+inflow_outflow_ratio,"[1.09, 1.14)",1573,0.1414,0.0922,0.3168,53,synthetic
+inflow_outflow_ratio,"[1.14, 1.19)",1259,0.1132,0.0715,0.5936,56,synthetic
+inflow_outflow_ratio,"[1.19, inf)",860,0.0773,0.0337,1.3849,65,synthetic
+inflow_outflow_ratio,Special,0,0.0000,0.0000,0.0000,49,synthetic
+inflow_outflow_ratio,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+balance_min_to_inflow,"(-inf, 0.07)",987,0.0887,0.2340,-0.7849,30,synthetic
+balance_min_to_inflow,"[0.07, 0.11)",1060,0.0953,0.1736,-0.4101,39,synthetic
+balance_min_to_inflow,"[0.11, 0.17)",1612,0.1449,0.1501,-0.2369,44,synthetic
+balance_min_to_inflow,"[0.17, 0.29)",2299,0.2067,0.1187,0.0339,50,synthetic
+balance_min_to_inflow,"[0.29, 0.54)",2555,0.2297,0.1010,0.2159,55,synthetic
+balance_min_to_inflow,"[0.54, 0.82)",1282,0.1152,0.0749,0.5435,63,synthetic
+balance_min_to_inflow,"[0.82, 1.16)",648,0.0582,0.0710,0.6011,64,synthetic
+balance_min_to_inflow,"[1.16, inf)",682,0.0613,0.0455,1.0740,76,synthetic
+balance_min_to_inflow,Special,0,0.0000,0.0000,0.0000,49,synthetic
+balance_min_to_inflow,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+inflow_monthly,"(-inf, 3540.87)",1018,0.0915,0.2043,-0.6110,41,synthetic
+inflow_monthly,"[3540.87, 5358.48)",1575,0.1416,0.1746,-0.4171,44,synthetic
+inflow_monthly,"[5358.48, 6993.90)",1448,0.1302,0.1540,-0.2670,46,synthetic
+inflow_monthly,"[6993.90, 8338.76)",1019,0.0916,0.1246,-0.0212,49,synthetic
+inflow_monthly,"[8338.76, 12398.70)",2297,0.2065,0.1071,0.1503,52,synthetic
+inflow_monthly,"[12398.70, 15772.33)",1275,0.1146,0.0933,0.3031,54,synthetic
+inflow_monthly,"[15772.33, 25034.41)",1646,0.1480,0.0723,0.5815,58,synthetic
+inflow_monthly,"[25034.41, inf)",847,0.0761,0.0519,0.9337,63,synthetic
+inflow_monthly,Special,0,0.0000,0.0000,0.0000,49,synthetic
+inflow_monthly,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+loan_to_inflow,"(-inf, 0.38)",865,0.0778,0.0543,0.8862,70,synthetic
+loan_to_inflow,"[0.38, 0.75)",3223,0.2897,0.0881,0.3664,58,synthetic
+loan_to_inflow,"[0.75, 0.88)",1246,0.1120,0.1220,0.0032,50,synthetic
+loan_to_inflow,"[0.88, 1.11)",2026,0.1821,0.1264,-0.0369,49,synthetic
+loan_to_inflow,"[1.11, 1.25)",1199,0.1078,0.1284,-0.0557,48,synthetic
+loan_to_inflow,"[1.25, 1.48)",1821,0.1637,0.1466,-0.2091,45,synthetic
+loan_to_inflow,"[1.48, inf)",745,0.0670,0.2698,-0.9748,27,synthetic
+loan_to_inflow,Special,0,0.0000,0.0000,0.0000,49,synthetic
+loan_to_inflow,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+airtime_gap_cv,"(-inf, 0.63)",1025,0.0921,0.0468,1.0428,65,synthetic
+airtime_gap_cv,"[0.63, 0.74)",1733,0.1558,0.0744,0.5500,57,synthetic
+airtime_gap_cv,"[0.74, 0.76)",652,0.0586,0.0982,0.2474,53,synthetic
+airtime_gap_cv,"[0.76, 0.85)",2873,0.2582,0.1208,0.0146,50,synthetic
+airtime_gap_cv,"[0.85, 0.90)",1851,0.1664,0.1378,-0.1365,47,synthetic
+airtime_gap_cv,"[0.90, 0.92)",727,0.0653,0.1568,-0.2883,45,synthetic
+airtime_gap_cv,"[0.92, 1.00)",1558,0.1400,0.1650,-0.3487,44,synthetic
+airtime_gap_cv,"[1.00, inf)",706,0.0635,0.2082,-0.6348,40,synthetic
+airtime_gap_cv,Special,0,0.0000,0.0000,0.0000,49,synthetic
+airtime_gap_cv,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+income_regularity,"(-inf, 0.83)",8727,0.7844,0.1419,-0.1705,49,synthetic
+income_regularity,"[0.83, 0.90)",557,0.0501,0.0575,0.8272,53,synthetic
+income_regularity,"[0.90, inf)",1841,0.1655,0.0494,0.9860,54,synthetic
+income_regularity,Special,0,0.0000,0.0000,0.0000,49,synthetic
+income_regularity,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+recent_income_dip,"(-inf, 0.28)",1586,0.1426,0.1778,-0.4392,49,synthetic
+recent_income_dip,"[0.28, 0.48)",1293,0.1162,0.1585,-0.3014,49,synthetic
+recent_income_dip,"[0.48, 0.57)",783,0.0704,0.1571,-0.2904,49,synthetic
+recent_income_dip,"[0.57, 0.71)",1536,0.1381,0.1113,0.1068,50,synthetic
+recent_income_dip,"[0.71, inf)",5925,0.5326,0.0979,0.2504,50,synthetic
+recent_income_dip,Special,0,0.0000,0.0000,0.0000,49,synthetic
+recent_income_dip,Missing,2,0.0002,0.0000,0.0000,49,synthetic
+cash_out_share,"(-inf, 0.62)",1490,0.1339,0.0966,0.2646,53,synthetic
+cash_out_share,"[0.62, 0.65)",1190,0.1070,0.1042,0.1809,52,synthetic
+cash_out_share,"[0.65, 0.67)",1307,0.1175,0.1125,0.0953,51,synthetic
+cash_out_share,"[0.67, 0.71)",2814,0.2529,0.1201,0.0209,50,synthetic
+cash_out_share,"[0.71, 0.74)",1946,0.1749,0.1321,-0.0877,48,synthetic
+cash_out_share,"[0.74, 0.78)",1803,0.1621,0.1414,-0.1670,47,synthetic
+cash_out_share,"[0.78, inf)",575,0.0517,0.1670,-0.3631,44,synthetic
+cash_out_share,Special,0,0.0000,0.0000,0.0000,49,synthetic
+cash_out_share,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+balance_volatility,"(-inf, 0.19)",911,0.0819,0.0823,0.4407,54,synthetic
+balance_volatility,"[0.19, 0.21)",589,0.0529,0.1171,0.0492,50,synthetic
+balance_volatility,"[0.21, 0.38)",7015,0.6306,0.1216,0.0069,50,synthetic
+balance_volatility,"[0.38, 0.47)",2019,0.1815,0.1308,-0.0762,49,synthetic
+balance_volatility,"[0.47, inf)",591,0.0531,0.1692,-0.3792,45,synthetic
+balance_volatility,Special,0,0.0000,0.0000,0.0000,49,synthetic
+balance_volatility,Missing,0,0.0000,0.0000,0.0000,49,synthetic
+equb_member,"(-inf, 0.50)",6259,0.5626,0.1363,-0.1240,47,synthetic
+equb_member,"[0.50, inf)",4866,0.4374,0.1044,0.1788,54,synthetic
+equb_member,Special,0,0.0000,0.0000,0.0000,49,synthetic
+equb_member,Missing,0,0.0000,0.0000,0.0000,49,synthetic

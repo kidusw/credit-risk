@@ -1,0 +1,16 @@
+borrower_id,pd,reason_1,reason_2,reason_3,reason_4,source
+6086,0.2001,Income varies a lot from month to month,Wallet balance often low,No regular equb or iddir contributions,"Airtime, bill and transaction pattern",synthetic
+4347,0.2260,Loan amount high compared with wallet inflows,Wallet balance often low,Low wallet inflows,Income is irregular or seasonal,synthetic
+521,0.1078,Wallet balance often low,Income is irregular or seasonal,Spending close to or above income,No regular equb or iddir contributions,synthetic
+2347,0.3925,Wallet balance often low,Loan amount high compared with wallet inflows,Spending close to or above income,Income is irregular or seasonal,synthetic
+863,0.1043,Income varies a lot from month to month,"Airtime, bill and transaction pattern",Loan amount high compared with wallet inflows,Recent fall in income,synthetic
+892,0.0928,Low wallet inflows,Wallet balance often low,Income is irregular or seasonal,Few people sending or receiving transfers,synthetic
+11539,0.0978,Low wallet inflows,Income is irregular or seasonal,Loan amount high compared with wallet inflows,"Airtime, bill and transaction pattern",synthetic
+1959,0.1458,Income varies a lot from month to month,Income is irregular or seasonal,No regular equb or iddir contributions,Spending close to or above income,synthetic
+16835,0.1664,Income varies a lot from month to month,Loan amount high compared with wallet inflows,Spending close to or above income,No regular equb or iddir contributions,synthetic
+12085,0.1041,Income varies a lot from month to month,Low wallet inflows,"Airtime, bill and transaction pattern",Recent fall in income,synthetic
+10637,0.2826,Income varies a lot from month to month,Low wallet inflows,Income is irregular or seasonal,Wallet balance often low,synthetic
+14150,0.1532,Income varies a lot from month to month,Low wallet inflows,Loan amount high compared with wallet inflows,Income is irregular or seasonal,synthetic
+13608,0.3441,Income varies a lot from month to month,Spending close to or above income,Low wallet inflows,Wallet balance often low,synthetic
+5003,0.2742,Wallet balance often low,Income varies a lot from month to month,Income is irregular or seasonal,Spending close to or above income,synthetic
+16739,0.0972,Income is irregular or seasonal,Low wallet inflows,Income varies a lot from month to month,Loan amount high compared with wallet inflows,synthetic

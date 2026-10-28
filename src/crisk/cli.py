@@ -11,12 +11,17 @@ data_app = typer.Typer(help="Download and build datasets.", no_args_is_help=True
 app.add_typer(data_app, name="data")
 train_app = typer.Typer(help="Train and evaluate PD models.", no_args_is_help=True)
 app.add_typer(train_app, name="train")
+mm_app = typer.Typer(
+    help="Thin-file track on SYNTHETIC Ethiopian mobile-money borrowers.", no_args_is_help=True
+)
+app.add_typer(mm_app, name="mm")
 
 RAW_DIR = Path("data/raw")
 INTERIM_DIR = Path("data/interim")
 PROCESSED_DIR = Path("data/processed")
 REPORTS_DIR = Path("reports")
 MODELS_DIR = Path("models")
+MM_DIR = Path("data/mobile_money")  # synthetic
 RAW_PARQUET = INTERIM_DIR / "accepted.parquet"
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -191,3 +196,68 @@ def data_audit() -> None:
     from crisk.data.columns import audit_markdown
 
     typer.echo(audit_markdown())
+
+
+@mm_app.command("generate")
+def mm_generate(
+    n: Annotated[int, typer.Option(help="Synthetic borrowers.")] = 20_000,
+    seed: Annotated[int, typer.Option(help="Random seed.")] = 42,
+) -> None:
+    """Generate SYNTHETIC borrowers and wallet history, then build their features."""
+    from crisk.mobile_money.features import build
+    from crisk.mobile_money.generate import generate
+
+    book = generate(n=n, seed=seed)
+    MM_DIR.mkdir(parents=True, exist_ok=True)
+    book.borrowers.to_parquet(MM_DIR / "borrowers.parquet", index=False)
+    book.transactions.to_parquet(MM_DIR / "transactions.parquet", index=False)
+    features = build(book.transactions, book.borrowers)
+    features.to_parquet(MM_DIR / "features.parquet", index=False)
+    b = book.borrowers
+    typer.echo(
+        f"SYNTHETIC: {len(b):,} borrowers, {len(book.transactions):,} transactions, "
+        f"default rate {b['default'].mean():.1%}, {len(features.columns) - 2} features -> {MM_DIR}"
+    )
+
+
+@mm_app.command("train")
+def mm_train() -> None:
+    """Scorecard, LightGBM, calibration, cutoff, reason codes and fairness (synthetic track)."""
+    import pandas as pd
+
+    from crisk.mobile_money.run import run, save
+
+    res = run(
+        pd.read_parquet(MM_DIR / "features.parquet"), pd.read_parquet(MM_DIR / "borrowers.parquet")
+    )
+    save(res, REPORTS_DIR, MODELS_DIR)
+    cols = ["model", "split", "auc", "ks", "brier", "mean_pd", "default_rate"]
+    typer.echo(res.metrics[cols].round(4).to_string(index=False))
+    typer.echo(f"\nchampion (validation AUC): {res.champion}")
+    typer.echo(res.lift.round(4).to_string(index=False))
+    typer.echo("\n" + res.calibration.round(4).to_string(index=False))
+    cols = ["policy", "split", "approval_rate", "profit", "return_on_lent", "bad_rate"]
+    typer.echo("\n" + res.policies[cols].round(4).to_string(index=False))
+    typer.echo("\n" + res.recovery.round(3).to_string(index=False))
+    typer.echo("\n" + res.reason_frequency.round(3).to_string(index=False))
+    typer.echo("\n" + res.reason_counts.to_string(index=False))
+    cols = ["policy", "attribute", "groups_used", "min_air", "min_air_group", "max_tpr_gap"]
+    typer.echo("\n" + res.fairness_summary[[*cols, "max_abs_citl"]].round(3).to_string(index=False))
+
+
+@mm_app.command("score")
+def mm_score(
+    borrower_id: Annotated[list[int], typer.Argument(help="Synthetic borrower ids to score.")],
+) -> None:
+    """Score synthetic borrowers with the saved thin-file model: PD, decision, reasons."""
+    import joblib
+    import pandas as pd
+
+    from crisk.mobile_money.run import MODEL_FILE, score
+
+    bundle = joblib.load(MODELS_DIR / MODEL_FILE)
+    features = pd.read_parquet(MM_DIR / "features.parquet")
+    rows = features[features["borrower_id"].isin(borrower_id)]
+    if rows.empty:
+        raise typer.BadParameter(f"no synthetic borrower with id in {borrower_id}")
+    typer.echo(score(bundle, rows.reset_index(drop=True)).round(4).to_string(index=False))

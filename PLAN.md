@@ -120,17 +120,17 @@ and down-cast dtypes to fit in 8 GB of RAM.
 
 ## Phase 6 — Ethiopian mobile-money track (synthetic, thin-file)
 
-- [ ] Generator: ~20k synthetic borrowers with 12 months of telebirr-style wallet history,
+- [x] Generator: ~20k synthetic borrowers with 12 months of telebirr-style wallet history,
       built on Project 1's `SyntheticGenerator` (salary, airtime, P2P transfers, bills,
       equb/iddir), plus synthetic demographics (gender, region, urban/rural) **by design**
       so fairness can be measured. Every row is `source='synthetic'`
-- [ ] Hidden default rule (documented, seeded): latent risk from income regularity,
+- [x] Hidden default rule (documented, seeded): latent risk from income regularity,
       cash-flow volatility, balance troughs and the like, with noise. The model never sees
       the rule
-- [ ] Alternative-data features: income regularity via Project 1's recurring detector,
+- [x] Alternative-data features: income regularity via Project 1's recurring detector,
       inflow/outflow ratio, balance volatility, airtime top-up cadence, equb/iddir
       participation, P2P network breadth
-- [ ] Same scorecard → LightGBM → calibration → reason codes pipeline; full fairness
+- [x] Same scorecard → LightGBM → calibration → reason codes pipeline; full fairness
       metrics by gender and region
 - **Metrics:** AUC/KS/Brier on a time-held-out cohort; recovery of the hidden rule
   (feature importance vs true drivers); fairness gaps

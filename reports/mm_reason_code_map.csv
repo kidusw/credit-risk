@@ -1,0 +1,11 @@
+code,text,actionable,features,source
+M01,Income is irregular or seasonal,True,income_regularity months_without_inflow airtime_gap_cv,synthetic
+M02,Income varies a lot from month to month,True,inflow_cv balance_volatility,synthetic
+M03,Spending close to or above income,True,inflow_outflow_ratio balance_trend cash_out_share,synthetic
+M04,Wallet balance often low,True,balance_min_to_inflow balance_mean_to_inflow low_balance_days,synthetic
+M05,Loan amount high compared with wallet inflows,True,loan_to_inflow loan_amount,synthetic
+M06,Recent fall in income,True,recent_inflow_change recent_income_dip,synthetic
+M07,No regular equb or iddir contributions,True,equb_member iddir_member,synthetic
+M08,Few people sending or receiving transfers,True,p2p_out_contacts p2p_in_contacts,synthetic
+M09,Low wallet inflows,True,inflow_monthly,synthetic
+M10,"Airtime, bill and transaction pattern",True,airtime_per_month airtime_share regular_bills txn_per_month,synthetic

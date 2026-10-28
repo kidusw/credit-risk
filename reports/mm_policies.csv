@@ -1,0 +1,9 @@
+policy,split,approval_rate,loans,lent,profit,return_on_lent,bad_rate,cutoff,source
+approve all,valid,1.0000,4219,43132100.0000,-329283.0000,-0.0076,0.1304,,synthetic
+approve all,test,1.0000,4656,49192000.0000,-429096.0000,-0.0087,0.1375,,synthetic
+rule of thumb: loan / inflow,valid,0.7502,3165,27768600.0000,293418.0000,0.0106,0.1163,0.1540,synthetic
+rule of thumb: loan / inflow,test,0.7685,3578,32583700.0000,572385.0000,0.0176,0.1124,0.1540,synthetic
+scorecard,valid,0.5601,2363,27322900.0000,1025433.0000,0.0375,0.0669,0.1222,synthetic
+scorecard,test,0.5820,2710,33029000.0000,1159554.0000,0.0351,0.0753,0.1222,synthetic
+champion (gbm),valid,0.3802,1604,19112700.0000,1065531.0000,0.0557,0.0461,0.0848,synthetic
+champion (gbm),test,0.3976,1851,23023600.0000,1230780.0000,0.0535,0.0508,0.0848,synthetic

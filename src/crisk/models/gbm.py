@@ -91,8 +91,9 @@ def prepare(df: pd.DataFrame, features: list[str]) -> pd.DataFrame:
     return X
 
 
-def constraints(features: list[str]) -> list[int]:
-    return [MONOTONE.get(f, 0) for f in features]
+def constraints(features: list[str], monotone: dict[str, int] | None = None) -> list[int]:
+    monotone = MONOTONE if monotone is None else monotone
+    return [monotone.get(f, 0) for f in features]
 
 
 def sample_configs(n: int, seed: int = 0) -> list[dict]:
@@ -113,6 +114,7 @@ class GBMModel:
     params: dict = field(default_factory=dict)
     model: object = None
     best_iteration: int = 0
+    monotone: dict[str, int] | None = None  # None: the Lending Club directions (MONOTONE)
 
     def fit(self, train: pd.DataFrame, valid: pd.DataFrame, early_stopping: int = 100):
         import lightgbm as lgb  # lazy: keeps the API image free of libgomp
@@ -120,7 +122,7 @@ class GBMModel:
         self.model = lgb.LGBMClassifier(
             **FIXED_PARAMS,
             **self.params,
-            monotone_constraints=constraints(self.features),
+            monotone_constraints=constraints(self.features, self.monotone),
             monotone_constraints_method="advanced",
         )
         self.model.fit(
@@ -145,7 +147,7 @@ class GBMModel:
                     "feature": self.features,
                     "gain": booster.feature_importance("gain"),
                     "splits": booster.feature_importance("split"),
-                    "monotone": constraints(self.features),
+                    "monotone": constraints(self.features, self.monotone),
                 }
             )
             .assign(gain_share=lambda d: d["gain"] / d["gain"].sum())

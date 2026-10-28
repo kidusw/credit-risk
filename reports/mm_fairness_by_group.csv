@@ -1,0 +1,33 @@
+group,n,default_rate,mean_pd,approval_rate,tpr,share,citl,air,tpr_gap,reference,policy,attribute,source
+female,2021,0.1371,0.1298,0.4048,0.4472,0.4341,-0.0073,1.0000,0.0000,True,champion PD <= 0.085,gender,synthetic
+male,2635,0.1378,0.1301,0.3920,0.4300,0.5659,-0.0077,0.9686,-0.0172,False,champion PD <= 0.085,gender,synthetic
+Addis Ababa,1119,0.1010,0.1009,0.5389,0.5755,0.2403,-0.0000,1.0000,0.0000,True,champion PD <= 0.085,region,synthetic
+Afar,257,0.1245,0.1491,0.2957,0.3244,0.0552,0.0246,0.5488,-0.2511,False,champion PD <= 0.085,region,synthetic
+Amhara,879,0.1615,0.1464,0.3197,0.3623,0.1888,-0.0152,0.5932,-0.2133,False,champion PD <= 0.085,region,synthetic
+Dire Dawa & Harari,332,0.0934,0.1063,0.5030,0.5316,0.0713,0.0129,0.9335,-0.0440,False,champion PD <= 0.085,region,synthetic
+Oromia,1064,0.1588,0.1437,0.3459,0.3799,0.2285,-0.0151,0.6418,-0.1957,False,champion PD <= 0.085,region,synthetic
+SNNP & Sidama,496,0.1573,0.1412,0.3407,0.3828,0.1065,-0.0160,0.6323,-0.1928,False,champion PD <= 0.085,region,synthetic
+Somali,230,0.1739,0.1348,0.3435,0.3842,0.0494,-0.0391,0.6374,-0.1913,False,champion PD <= 0.085,region,synthetic
+Tigray,279,0.1254,0.1289,0.3871,0.4303,0.0599,0.0035,0.7183,-0.1452,False,champion PD <= 0.085,region,synthetic
+rural,2505,0.1689,0.1554,0.2758,0.3088,0.5380,-0.0134,0.5115,-0.2672,False,champion PD <= 0.085,urban_rural,synthetic
+urban,2151,0.1009,0.1003,0.5393,0.5760,0.4620,-0.0006,1.0000,0.0000,True,champion PD <= 0.085,urban_rural,synthetic
+day_labourer,829,0.1821,0.1606,0.2413,0.2729,0.1780,-0.0216,0.3179,-0.5095,False,champion PD <= 0.085,occupation,synthetic
+farmer,1278,0.2027,0.1910,0.1166,0.1344,0.2745,-0.0117,0.1536,-0.6479,False,champion PD <= 0.085,occupation,synthetic
+salaried,1074,0.0717,0.0630,0.7588,0.7823,0.2307,-0.0087,1.0000,0.0000,True,champion PD <= 0.085,occupation,synthetic
+trader,1475,0.1037,0.1087,0.4658,0.4955,0.3168,0.0050,0.6138,-0.2869,False,champion PD <= 0.085,occupation,synthetic
+female,2021,0.1371,0.1298,0.7709,0.7930,0.4341,-0.0073,1.0000,0.0000,True,rule of thumb,gender,synthetic
+male,2635,0.1378,0.1301,0.7666,0.7892,0.5659,-0.0077,0.9944,-0.0038,False,rule of thumb,gender,synthetic
+Addis Ababa,1119,0.1010,0.1009,0.7828,0.7982,0.2403,-0.0000,0.9580,-0.0379,False,rule of thumb,region,synthetic
+Afar,257,0.1245,0.1491,0.7276,0.7733,0.0552,0.0246,0.8904,-0.0627,False,rule of thumb,region,synthetic
+Amhara,879,0.1615,0.1464,0.7634,0.7870,0.1888,-0.0152,0.9341,-0.0491,False,rule of thumb,region,synthetic
+Dire Dawa & Harari,332,0.0934,0.1063,0.7651,0.7807,0.0713,0.0129,0.9362,-0.0553,False,rule of thumb,region,synthetic
+Oromia,1064,0.1588,0.1437,0.7716,0.7866,0.2285,-0.0151,0.9442,-0.0495,False,rule of thumb,region,synthetic
+SNNP & Sidama,496,0.1573,0.1412,0.7540,0.7895,0.1065,-0.0160,0.9227,-0.0466,False,rule of thumb,region,synthetic
+Somali,230,0.1739,0.1348,0.7261,0.7684,0.0494,-0.0391,0.8885,-0.0676,False,rule of thumb,region,synthetic
+Tigray,279,0.1254,0.1289,0.8172,0.8361,0.0599,0.0035,1.0000,0.0000,True,rule of thumb,region,synthetic
+rural,2505,0.1689,0.1554,0.7609,0.7843,0.5380,-0.0134,0.9789,-0.0135,False,rule of thumb,urban_rural,synthetic
+urban,2151,0.1009,0.1003,0.7773,0.7978,0.4620,-0.0006,1.0000,0.0000,True,rule of thumb,urban_rural,synthetic
+day_labourer,829,0.1821,0.1606,0.7624,0.7935,0.1780,-0.0216,0.9669,-0.0121,False,rule of thumb,occupation,synthetic
+farmer,1278,0.2027,0.1910,0.7418,0.7684,0.2745,-0.0117,0.9408,-0.0372,False,rule of thumb,occupation,synthetic
+salaried,1074,0.0717,0.0630,0.7775,0.7924,0.2307,-0.0087,0.9860,-0.0132,False,rule of thumb,occupation,synthetic
+trader,1475,0.1037,0.1087,0.7885,0.8056,0.3168,0.0050,1.0000,0.0000,True,rule of thumb,occupation,synthetic

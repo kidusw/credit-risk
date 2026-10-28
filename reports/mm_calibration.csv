@@ -1,0 +1,5 @@
+version,split,method,brier,ece,mean_pd,default_rate,citl,slope,intercept,source
+raw,valid,platt,0.1050,0.0212,0.1217,0.1304,-0.0087,0.8992,-0.0904,synthetic
+raw,test,platt,0.1093,0.0195,0.1215,0.1375,-0.0160,0.8873,-0.0412,synthetic
+calibrated,valid,platt,0.1048,0.0180,0.1304,0.1304,-0.0000,0.9997,-0.0004,synthetic
+calibrated,test,platt,0.1090,0.0165,0.1300,0.1375,-0.0075,0.9866,0.0479,synthetic
