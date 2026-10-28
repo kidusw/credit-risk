@@ -154,13 +154,13 @@ and down-cast dtypes to fit in 8 GB of RAM.
 
 ## Phase 8 — Ship
 
-- [ ] FastAPI: `POST /score` (PD, score points, risk band, decision, reason codes; both
+- [x] FastAPI: `POST /score` (PD, score points, risk band, decision, reason codes; both
       tracks), `GET /model`, `GET /health`; decisions logged to Postgres
-- [ ] Streamlit: applicant what-if (sliders → PD and reasons), portfolio/vintage view,
+- [x] Streamlit: applicant what-if (sliders → PD and reasons), portfolio/vintage view,
       fairness tables, model comparison
-- [ ] MODEL_CARD.md + a short **model validation report** in the style banks use
+- [x] MODEL_CARD.md + a short **model validation report** in the style banks use
       (conceptual soundness, performance, stability, limitations, monitoring plan)
-- [ ] Slim images + bootstrap + one-command `docker compose up` (as in Project 1);
+- [x] Slim images + bootstrap + one-command `docker compose up` (as in Project 1);
       README with architecture diagram, results and screenshots
 - **Exit criteria:** fresh clone → `docker compose up` → app works end-to-end (on a
   bundled small sample when no Kaggle token is set); CI green.

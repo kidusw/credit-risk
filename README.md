@@ -4,13 +4,24 @@ Predict the probability that a Lending Club loan defaults (PD) from what was kno
 was approved, then turn PDs into priced approve/decline decisions with reason codes,
 fairness checks and stability monitoring. See [PLAN.md](PLAN.md) for the eight phases.
 
-**Status:** Phases 1–7 done: data and leakage audit, WoE scorecard, monotonic LightGBM
-challenger, calibration with expected loss and an approval policy, SHAP explanations with
-adverse-action reason codes and a fairness audit, and a second, **synthetic** thin-file
-track for Ethiopian mobile-money borrowers, then reject inference on 7.4M rejected
-applications and population-stability monitoring by vintage.
+**Status:** all eight phases done: data and leakage audit, WoE scorecard, monotonic
+LightGBM challenger, calibration with expected loss and an approval policy, SHAP
+explanations with adverse-action reason codes and a fairness audit, a second,
+**synthetic** thin-file track for Ethiopian mobile-money borrowers, reject inference on
+7.4M rejected applications with population-stability monitoring, and a shipped API and
+dashboard. See [MODEL_CARD.md](MODEL_CARD.md) and the
+[model validation report](docs/validation_report.md).
 
-### Results so far (36-month loans, future vintages)
+**Try it** (Docker Desktop; [details](#ship-api-dashboard-and-docker-phase-8)):
+
+```powershell
+git clone https://github.com/kidusw/credit-risk && cd credit-risk
+docker compose up --build      # dashboard http://localhost:8502   API http://localhost:8001/docs
+```
+
+![Dashboard: Lending Club applicant what-if](docs/screenshots/lc_what_if.png)
+
+### Results (36-month loans, future vintages)
 
 | Model | Valid AUC | Test AUC | Test Gini | Test KS |
 |---|---:|---:|---:|---:|
@@ -1044,3 +1055,135 @@ What the numbers say:
   stated assumption about rejects? The answer here is 2% under fuzzy augmentation and
   8–12% under parcelling at 2×. The real fix is data, through a small randomised
   approval test below the cutoff, which is how lenders actually measure it.
+
+## Ship: API, dashboard and Docker (Phase 8)
+
+[`src/crisk/serve/`](src/crisk/serve), [`src/crisk/dashboard/`](src/crisk/dashboard),
+[`Dockerfile`](Dockerfile), [`docker-compose.yml`](docker-compose.yml). Documentation:
+[MODEL_CARD.md](MODEL_CARD.md) and the [model validation report](docs/validation_report.md),
+written in the format banks use: conceptual soundness, performance, stability,
+limitations and a monitoring plan, with six findings.
+
+```mermaid
+flowchart LR
+  subgraph boot["bootstrap (one-shot, idempotent)"]
+    direction TB
+    mig[alembic upgrade] --> lc{Lending Club model?}
+    lc -- "trained locally" --> exp[crisk export]
+    lc -- "KAGGLE_API_TOKEN" --> real["download, build, train, decide (~45 min)"] --> exp
+    lc -- "neither" --> demo["DEMO model on synthetic<br/>LC-shaped loans"] --> exp
+    mm["mobile money: generate + train<br/>(synthetic by design)"] --> exp
+  end
+  exp -- "*.lgb.txt + *.json" --> serving[("models/serving")]
+  serving --> api["FastAPI :8001<br/>POST /score"]
+  api -- "every decision" --> db[("Postgres :5434<br/>decisions")]
+  dash["Streamlit :8502"] -- HTTP --> api
+  reports[("reports/*.csv")] --> dash
+```
+
+### Run it
+
+```powershell
+docker compose up --build
+#   dashboard  http://localhost:8502
+#   API docs   http://localhost:8001/docs
+# Behind a TLS-intercepting proxy, pass its CA bundle as a BuildKit secret:
+#   $env:CRISK_CA_BUNDLE = "C:\path\to\corporate-bundle.pem"; docker compose up --build
+```
+
+The bootstrap service runs once, then the API and dashboard start. Per track it uses
+the first option that applies:
+
+1. The model is already exported.
+2. It was trained locally, so it is exported.
+3. A Kaggle token is set, so the real pipeline runs.
+4. Neither, so Lending Club gets a **DEMO** model trained on synthetic Lending-Club-shaped
+   loans. The real loan data can't ship with the repository, so a fresh clone can't
+   have the real model.
+
+The mobile-money track is always generated, because it is synthetic by design. Demo and
+synthetic answers say `"synthetic": true`, and the dashboard shows a banner. Ports
+(8001, 8502, 5434) differ from Project 1's, so both stacks run side by side. Override
+them with `CRISK_API_PORT`, `CRISK_DASHBOARD_PORT` and `CRISK_DB_PORT`.
+
+Without Docker: `uv run crisk export`, `uv run uvicorn crisk.serve.app:app --port 8001`
+and `uv run streamlit run src/crisk/dashboard/app.py`.
+
+### The API
+
+| Endpoint | What it does |
+|---|---|
+| `POST /score` | `{"track": "lending_club" \| "mobile_money", "applicant": {...}, "applicant_ref": "..."}` returns calibrated PD, points, risk band, decision, cutoff, up to 4 reasons and the missing features. The answer is logged to Postgres |
+| `GET /model` | per track: version, training data, `synthetic`/`demo` flags, cutoff and its rule, test metrics, score scale, bands, reason map |
+| `GET /examples/{track}` | sample applicants (the dashboard's starting points) |
+| `GET /decisions?limit=20` | the latest decisions from the audit log |
+| `GET /health` | tracks loaded, database reachable |
+
+```text
+POST /score  {"track": "mobile_money", "applicant": {"inflow_monthly": 6000, "inflow_cv": 0.9,
+              "loan_amount": 9000, "loan_to_inflow": 1.5, "balance_min_to_inflow": 0.05}}
+-> {"synthetic": true, "pd": 0.488, "score": 488, "risk_band": "F", "decision": "decline",
+    "cutoff": 0.085, "reasons": [{"code": "M04", "text": "Wallet balance often low", ...},
+    {"code": "M05", "text": "Loan amount high compared with wallet inflows", ...}, ...],
+    "missing_features": ["months_without_inflow", ...], "decision_id": 1}
+```
+
+- **Outputs:**
+  - **Points** use the scorecard's scale: 600 points means 50:1 good:bad odds, and every
+    20 points doubles the odds.
+  - **Risk bands** are A < 5%, B < 10%, C < 15%, D < 20%, E < 30% and F, on calibrated PD.
+  - **Reasons** are given for declines only: exact TreeSHAP from the served booster,
+    grouped into the same plain-language codes as Phases 5 and 6.
+- **Safe artefacts.** `crisk export` writes each champion as LightGBM's own text format
+  (which keeps the category mappings) plus a JSON file with the encoding, calibrator
+  parameters, cutoff, bands, reason map and metrics. The API loads nothing with pickle.
+  **Served PDs equal the training pipeline's exactly** (max difference 0.0 on 2,000 LC
+  test loans and 1,000 synthetic borrowers), and a test asserts it to 1e-9.
+- **Inputs:** features by model name. Unknown names are rejected (422). Missing ones
+  become missing values, as in training, and are listed in the response. For Lending
+  Club the API derives `loan_to_income` and cleans DTI sentinels, as `features.clean`
+  does.
+- **Audit trail:** every answer is written to the `decisions` table (Alembic migration
+  0002) with the inputs, PD, score, band, reasons and model version. If Postgres is down,
+  scoring still answers, with `decision_id: null`.
+
+### Images
+
+| Image | Contents | Size (unpacked / compressed) |
+|---|---|---:|
+| `crisk-api` | FastAPI, LightGBM, SQLAlchemy, pandas; no training code | 780 MB / 177 MB |
+| `crisk-dashboard` | Streamlit + httpx only | 784 MB / 179 MB |
+| `crisk-bootstrap` | + optbinning, MLflow, pyarrow, Kaggle client | 1.8 GB / 411 MB |
+
+One two-stage Dockerfile builds all three. uv installs into a venv in the builder stage,
+and the runtime stage copies only the venv and the code, plus `libgomp1` for LightGBM.
+The corporate CA bundle is mounted as a BuildKit secret only while dependencies
+download, so it is never in a layer. In the API image, scipy (a LightGBM dependency) and
+pandas are most of the 446 MB venv.
+
+### Validation
+
+Validated end to end on the 8 GB work laptop (Docker Desktop, 3.9 GB for the VM):
+
+- **Fresh clone, no Kaggle token**, cloned into an empty folder with
+  `docker compose -p crisk-fresh up --build` on spare ports: **26 min 40 s** to a working
+  stack.
+  - About 21 minutes is building the three images from a cold cache, behind a
+    TLS-intercepting proxy at 1 MB/s.
+  - The bootstrap took **4 min 43 s**: migrate; train and export the demo Lending Club
+    model; generate 20,000 synthetic borrowers (5.9M transactions); train the thin-file
+    pipeline; export.
+  - It reproduced the committed thin-file results exactly (test AUC 0.7227, seeded).
+  - `/health` reported both tracks and the database. `/model` flagged the Lending Club
+    model `demo: true`. `/score` answered and logged, and the dashboard served on its port.
+- **This machine, real models:** after `crisk export`, the bootstrap only migrates and
+  finds both tracks exported. The API serves the real champion (test AUC 0.706), and
+  the dashboard at http://localhost:8502 drives it.
+- **Tests:** 90 pass in CI and locally (10 new in `tests/test_serve.py`). They cover
+  export → serving parity, the `/score` contract (decision vs cutoff, at most 4 positive
+  reasons on declines, none on approvals), unknown-feature rejection, derived inputs,
+  the score scale and bands, decision logging, scoring with the database down, and the
+  dashboard's API client.
+
+![Thin-file what-if](docs/screenshots/thin_file.png)
+![Portfolio: expected vs realised loss, PSI, AUC by vintage](docs/screenshots/portfolio.png)
