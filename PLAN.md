@@ -142,10 +142,10 @@ and down-cast dtypes to fit in 8 GB of RAM.
 
 ## Phase 7 — Reject inference + stability
 
-- [ ] Reject inference on the Lending Club rejected applications (the shared columns
+- [x] Reject inference on the Lending Club rejected applications (the shared columns
       only): fuzzy augmentation / parcelling, and the resulting change in approval
       decisions
-- [ ] Population stability: PSI of scores and key features by vintage; characteristic
+- [x] Population stability: PSI of scores and key features by vintage; characteristic
       stability report (sets up Project 5, drift monitoring)
 - **Metrics:** PSI (<0.1 stable, 0.1–0.25 monitor, >0.25 act), approval-rate change from
   reject inference

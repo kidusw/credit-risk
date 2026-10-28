@@ -1,0 +1,7 @@
+model,split,flipped_share,newly_approved_rejects,newly_declined_accepted,newly_approved_accepted,newly_declined_rejects
+kgb (accepted only),valid,0.0,0.0,0.0,0.0,0.0
+fuzzy augmentation,valid,0.0,2338.4,2071.0,1301.0,1568.4
+parcelling,valid,0.1,7629.4,6123.0,14248.0,15754.9
+kgb (accepted only),test,0.0,0.0,0.0,0.0,0.0
+fuzzy augmentation,test,0.0,355.4,3363.0,3128.0,120.9
+parcelling,test,0.1,407.1,10678.0,14375.0,4104.3

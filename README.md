@@ -4,10 +4,11 @@ Predict the probability that a Lending Club loan defaults (PD) from what was kno
 was approved, then turn PDs into priced approve/decline decisions with reason codes,
 fairness checks and stability monitoring. See [PLAN.md](PLAN.md) for the eight phases.
 
-**Status:** Phases 1–6 done: data and leakage audit, WoE scorecard, monotonic LightGBM
+**Status:** Phases 1–7 done: data and leakage audit, WoE scorecard, monotonic LightGBM
 challenger, calibration with expected loss and an approval policy, SHAP explanations with
 adverse-action reason codes and a fairness audit, and a second, **synthetic** thin-file
-track for Ethiopian mobile-money borrowers.
+track for Ethiopian mobile-money borrowers, then reject inference on 7.4M rejected
+applications and population-stability monitoring by vintage.
 
 ### Results so far (36-month loans, future vintages)
 
@@ -61,7 +62,7 @@ uv sync
 copy .env.example .env            # add KAGGLE_API_TOKEN
 docker compose up -d db           # PostgreSQL 16 on localhost:5434 (own compose project: crisk)
 uv run crisk migrate
-uv run crisk data download        # 393 MB, cached in data/raw/
+uv run crisk data download        # 393 MB, cached in data/raw/ (--rejected: +255 MB, Phase 7)
 uv run crisk data build           # ingest (if needed) -> filters -> split -> schema check
 uv run crisk data load            # matured loans + vintage table into Postgres
 uv run crisk train scorecard      # Phase 2: WoE scorecards + baseline, logged to MLflow
@@ -71,6 +72,9 @@ uv run crisk explain              # Phase 5: SHAP, reason codes, fairness, addr_
 uv run crisk mm generate          # Phase 6: SYNTHETIC borrowers + wallet history + features
 uv run crisk mm train             # Phase 6: scorecard, LightGBM, calibration, reasons, fairness
 uv run crisk mm score 15001 15002 # Phase 6: PD, decision and reasons for synthetic borrowers
+uv run crisk data rejected        # Phase 7: 27.6M rejected applications -> parquet (60 s)
+uv run crisk monitor stability    # Phase 7: PSI by issue quarter, characteristic report
+uv run crisk monitor reject       # Phase 7: reject inference (fuzzy, parcelling)
 uv run pytest
 ```
 
@@ -895,3 +899,148 @@ What the audit shows:
 `models/mm_model.joblib` holds the champion, its Platt calibrator, the cutoff, the
 feature list and the reason map. `crisk mm score` uses it today, next to the Lending
 Club model's `models/decision.joblib`. Phase 8 puts both behind one `POST /score` API.
+
+## Reject inference and stability (Phase 7)
+
+[`src/crisk/monitor/`](src/crisk/monitor). Back to the Lending Club data: two questions a
+model-risk reviewer asks about any credit model. *Does it hold up as the population
+changes?* And *what about the applicants it never saw?*
+
+### Population stability by vintage
+
+[`stability.py`](src/crisk/monitor/stability.py) computes the **PSI** of both scores and the
+champion's key features for every issue quarter, against train: Σ (actual% − expected%) ×
+ln(actual% ÷ expected%). The bins are train deciles; missing values get their own bin;
+categoricals and two-valued numerics are binned by value. Bands: **< 0.1 stable,
+0.1–0.25 monitor, > 0.25 act**.
+
+![PSI vs the last year of train, by issue quarter](reports/psi_by_quarter.png)
+
+| Variable | Max PSI, valid | Max PSI, test (quarter) | Band | Test max vs last year of train |
+|---|---:|---:|---|---:|
+| Champion PD | 0.085 | 0.155 (2015Q4) | monitor | 0.140 |
+| Scorecard points | 0.059 | 0.127 (2015Q4) | monitor | 0.151 |
+| `int_rate` | 0.342 | **0.563** (2015Q4) | **act** | **0.698** |
+| `sub_grade` | 0.123 | 0.174 (2015Q4) | monitor | 0.196 |
+| `dti` | 0.060 | 0.085 (2016Q1) | stable | 0.058 |
+| `loan_to_income` | 0.027 | 0.039 | stable | 0.052 |
+| `fico_range_low` | 0.060 | 0.036 | stable | 0.007 |
+| `annual_inc`, `home_ownership`, `purpose` | ≤ 0.05 | ≤ 0.054 | stable | ≤ 0.021 |
+| `acc_open_past_24mths` | 1.217 | 1.244 | *artefact* | 0.043 |
+| `term_months` | 1.712 | 1.712 | *by design* | 1.663 |
+
+Every quarter: [`reports/psi_by_quarter.csv`](reports/psi_by_quarter.csv) (vs all of
+train) and [`reports/psi_vs_recent_train.csv`](reports/psi_vs_recent_train.csv) (vs
+2013Q3–2014Q2). Summary: [`reports/stability_summary.csv`](reports/stability_summary.csv).
+
+Two of the red flags are false alarms, and a monitoring report has to say so:
+
+- **`acc_open_past_24mths`** didn't exist before 2012Q2, so 16% of train is missing and no
+  later loan is. Against the last year of train its PSI is 0.04, stable. The second
+  reference window is there to separate field changes from population changes.
+- **`term_months`** is 36 months only in validation and test, because 60-month loans from
+  those windows hadn't matured. That's how the split was built, not drift.
+
+The real finding: **Lending Club repriced, and the score drifted with it.** Interest rates
+moved far more than grades (PSI 0.70 vs 0.20 by 2015Q4). The test book holds more A
+grades (25% vs 17% in train) at lower rates (median 11.0% vs 13.7%). The champion reads
+both as lower risk, so its score moves into the monitor band from 2015Q3.
+
+**The characteristic stability report** ([`reports/csr_by_quarter.csv`](reports/csr_by_quarter.csv))
+breaks the scorecard's average score into its 18 characteristics. By 2016Q1 the average
+applicant scores **+7.1 points** above train, which is "safer". About +3.0 of that comes
+from `sub_grade` and +3.0 from `term` (the 36-month-only design); the rest is under a point
+each ([`reports/csr_latest_quarter.csv`](reports/csr_latest_quarter.csv)). Yet the 2016Q1
+default rate was 16.1%, above train's 15.5%.
+
+**Scores alone would have missed this.** Input stability says the book looked better.
+Outcome monitoring (Phase 4) says expected loss covered only 77% of realised loss in
+2016Q1. A monitoring plan needs both: PSI of scores and inputs every month, plus realised
+vs expected loss as vintages season. Here the trigger is the repricing (`int_rate` in the
+act band), and the action is to recalibrate on recent vintages and re-check whether
+grades still mean what they meant in train.
+
+### Reject inference
+
+Lending Club approved only **12% of applications** in these windows. The other 88% are in
+its rejected file (27.6M rows; 7.4M fall inside the train/valid/test windows). Every model
+so far learned the risk of *approved* applicants. Reject inference guesses what the
+rejected ones would have done and refits on everyone
+([`reject.py`](src/crisk/monitor/reject.py)).
+
+**The shared columns are thin.** The rejected file has only loan amount, risk score, DTI,
+employment length, state and zip:
+
+- State and zip stay out, as in Phase 5.
+- Employment length is "< 1 year" for most rejects, against a median of 6 years for accepts.
+  That looks like a field default rather than real tenure, so it's left out too.
+- The model uses **FICO / risk score, DTI and loan amount**. Lending Club's data dictionary
+  describes the reject risk score as FICO before 5 Nov 2013 and VantageScore after. The
+  two scales are similar but not identical, which is one more caveat.
+
+**Most rejects are policy rejects.** Their risk score is below 660 (Lending Club's floor:
+no accepted loan has less) or missing, their DTI is over 40, or the amount is outside
+1,000–35,000. No model trained on accepted loans has data there, so they aren't inferred:
+they stay declined. In the test window about 90% of reject risk scores are missing, so only 2%
+of test rejects are in range.
+
+| Window | Accepted (all terms) | Rejected | LC approval rate | Policy rejects | In-range rejects |
+|---|---:|---:|---:|---:|---:|
+| Train (2007–2014Q2) | 333,475 | 2,305,007 | 12.6% | 1,632,346 (71%) | 672,661 |
+| Valid (2014Q3–2015Q1) | 217,147 | 1,707,168 | 11.3% | 1,379,664 (81%) | 327,504 |
+| Test (2015Q2–2016Q1) | 470,705 | 3,393,541 | 12.2% | 3,318,587 (98%) | 74,954 |
+
+In-range rejects are weighted so that rejects : accepts matches Lending Club's real ratio
+in each window ([`reports/reject_population.csv`](reports/reject_population.csv)).
+
+**Three models**, all monotonic LightGBM on the same three columns:
+
+1. **Known-good-bad (KGB):** accepted loans only.
+2. **Fuzzy augmentation:** each in-range train reject enters twice, as bad with weight
+   PD_KGB and as good with weight 1 − PD_KGB.
+3. **Parcelling:** rejects are banded by KGB PD into deciles and labelled bad at **2×** the
+   accepted bad rate of their band ([`reports/reject_parcel_bands.csv`](reports/reject_parcel_bands.csv)).
+   The factor is an assumption: rejects in a band are taken to be riskier than accepts,
+   because Lending Club saw more than these three columns.
+
+| Model | Test AUC on accepted loans | Mean PD, accepted (test) | Mean PD, in-range rejects (test) | Decisions changed vs KGB (valid / test) |
+|---|---:|---:|---:|---:|
+| KGB (accepted only) | 0.623 | 15.8% | 16.7% | – |
+| Fuzzy augmentation | 0.624 | 15.9% | 16.7% | 2.0% / 1.9% |
+| Parcelling (2×) | 0.618 | 25.7% | 28.6% | 11.9% / 8.1% |
+
+Decisions are compared at Lending Club's own approval volume. Each model approves as many
+applicants as LC did, choosing the lowest PDs among accepted loans plus in-range rejects.
+Policy rejects are declined by every model. Full tables:
+[`reports/reject_models.csv`](reports/reject_models.csv),
+[`reports/reject_decisions.csv`](reports/reject_decisions.csv),
+[`reports/reject_flips.csv`](reports/reject_flips.csv),
+[`reports/reject_fixed_cutoff.csv`](reports/reject_fixed_cutoff.csv).
+
+What the numbers say:
+
+- **On these three columns, in-range rejects look like accepts.** Their PD under the KGB is
+  almost the same (16.7% vs 15.8% on test), and the KGB score's PSI between the two
+  groups is 0.04. They do differ on DTI and loan amount (PSI 0.15–0.30;
+  [`reports/reject_psi.csv`](reports/reject_psi.csv)), but not in ways that move the
+  score. So Lending Club rejected them for information that isn't in the rejected file:
+  full credit history, income verification, fraud checks. A model with only these
+  columns can't reproduce LC's decision. At LC's volume in validation, it would give
+  **65% of approval slots to applicants LC rejected**.
+- **Fuzzy augmentation changes almost nothing** (2% of decisions, the same AUC). That is
+  expected. Weighting each reject by the KGB's own PD adds no information: the refit
+  learns the KGB back.
+- **Parcelling changes decisions because of its assumption.** Doubling the band bad rates
+  raises every PD (mean 25.7% against a real 15.2% on accepted test loans), so it is
+  badly calibrated unless refitted. It shifts approvals back toward accepted applicants
+  (59% of validation slots to rejects, down from 65%) and costs 0.005 AUC on the loans
+  where outcomes are known. At the KGB's own PD cutoff it approves almost no one
+  (0% valid, 29% test, against 40% and 86%). That's the "approval-rate change from
+  reject inference", and it is set entirely by the inflation factor.
+- **None of this can be validated.** Whether a rejected applicant would have repaid is
+  unknowable from this data. The only measurable effect is on accepted loans, where
+  reject inference can't help and here slightly hurts. The honest use of reject
+  inference is as a *sensitivity analysis*: how much would decisions change under a
+  stated assumption about rejects? The answer here is 2% under fuzzy augmentation and
+  8–12% under parcelling at 2×. The real fix is data, through a small randomised
+  approval test below the cutoff, which is how lenders actually measure it.

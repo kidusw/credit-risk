@@ -1,0 +1,4 @@
+split,accepted_all,accepted_modelled,rejected,policy_rejects,in_range_rejects,lc_approval_rate,reject_weight
+train,333475,315600,2305007,1632346,672661,0.1264,0.9464
+valid,217147,147183,1707168,1379664,327504,0.1128,0.6778
+test,470705,316243,3393541,3318587,74954,0.1218,0.6718

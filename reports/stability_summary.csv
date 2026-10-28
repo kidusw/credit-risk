@@ -1,0 +1,13 @@
+variable,valid_max_psi,test_max_psi,worst_quarter,band,test_max_psi_vs_recent,band_vs_recent
+champion_pd,0.0851,0.1547,2015Q4,monitor,0.1402,monitor
+scorecard_points,0.0590,0.1270,2015Q4,monitor,0.1511,monitor
+sub_grade,0.1234,0.1741,2015Q4,monitor,0.1964,monitor
+int_rate,0.3416,0.5625,2015Q4,act,0.6984,act
+annual_inc,0.0123,0.0145,2016Q1,stable,0.0115,stable
+loan_to_income,0.0266,0.0392,2015Q4,stable,0.0516,stable
+acc_open_past_24mths,1.2167,1.2437,2016Q1,act,0.0431,stable
+dti,0.0597,0.0848,2016Q1,stable,0.0580,stable
+term_months,1.7117,1.7117,2014Q3,act,1.6630,act
+fico_range_low,0.0598,0.0356,2014Q4,stable,0.0072,stable
+home_ownership,0.0150,0.0187,2016Q1,stable,0.0189,stable
+purpose,0.0502,0.0539,2015Q4,stable,0.0205,stable

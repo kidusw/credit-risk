@@ -388,3 +388,56 @@ def rule_recovery(recovery: pd.DataFrame, path: Path) -> Path:
     fig.savefig(path, facecolor=SURFACE)
     plt.close(fig)
     return path
+
+
+def psi_by_quarter(
+    psi: pd.DataFrame, path: Path, n_features: int = 3, exclude: tuple[str, ...] = ()
+) -> Path:
+    """PSI per issue quarter: both scores and the most-shifted features (minus `exclude`)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    held = psi[psi["split"] != "train"]
+    features = [c for c in psi.columns if c not in ("issue_quarter", "split", "n", *exclude)]
+    scores = ["champion_pd", "scorecard_points"]
+    shifted = held[[c for c in features if c not in scores]].max().nlargest(n_features).index
+    lines = [
+        ("champion_pd", "Champion PD", SERIES["gbm_with_pricing"][1], "-", "o"),
+        ("scorecard_points", "Scorecard points", SERIES["scorecard_with_pricing"][1], "--", "^"),
+    ]
+    colours = [
+        SERIES[k][1] for k in ("gbm_no_pricing", "scorecard_no_pricing", "baseline_lc_sub_grade")
+    ]
+    styles = [(":", "s"), ("-.", "D"), (":", "v")]
+    for f, c, (ls, mk) in zip(shifted, colours, styles, strict=False):
+        lines.append((f, f, c, ls, mk))
+
+    x = np.arange(len(psi))
+    fig, ax = plt.subplots(figsize=(9, 4.8), dpi=150)
+    fig.patch.set_facecolor(SURFACE)
+    top = max(0.3, float(psi[[line[0] for line in lines]].max().max()) * 1.1)
+    ax.axhspan(0.1, 0.25, color="#f3e9c8", alpha=0.6, lw=0)
+    ax.axhspan(0.25, top, color="#f6d6cc", alpha=0.6, lw=0)
+    ax.text(0.2, 0.105, "monitor", fontsize=8, color=INK_2, va="bottom")
+    ax.text(0.2, 0.255, "act", fontsize=8, color=INK_2, va="bottom")
+    for col, label, colour, ls, mk in lines:
+        ax.plot(x, psi[col], color=colour, linestyle=ls, marker=mk, markersize=3.5, lw=1.6)
+        ax.annotate(
+            f" {label}", (x[-1], psi[col].iloc[-1]), fontsize=7.5, color=colour, va="center"
+        )
+    first_valid = int(np.flatnonzero(psi["split"].to_numpy() == "valid")[0])
+    first_test = int(np.flatnonzero(psi["split"].to_numpy() == "test")[0])
+    for xv, name in ((first_valid, "valid"), (first_test, "test")):
+        ax.axvline(xv - 0.5, color=AXIS, lw=1)
+        ax.text(xv - 0.4, top * 0.97, name, fontsize=8, color=INK_2, va="top")
+    step = max(1, len(x) // 12)
+    ax.set_xticks(x[::step], psi["issue_quarter"].iloc[::step], rotation=45, ha="right")
+    ax.set_ylim(0, top)
+    ax.set_xlim(-0.5, len(x) + 2.5)
+    _style(ax, "Population stability vs the last year of train, by issue quarter", "", "PSI")
+    fig.tight_layout()
+    fig.savefig(path, facecolor=SURFACE)
+    plt.close(fig)
+    return path

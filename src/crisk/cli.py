@@ -11,6 +11,8 @@ data_app = typer.Typer(help="Download and build datasets.", no_args_is_help=True
 app.add_typer(data_app, name="data")
 train_app = typer.Typer(help="Train and evaluate PD models.", no_args_is_help=True)
 app.add_typer(train_app, name="train")
+monitor_app = typer.Typer(help="Stability monitoring and reject inference.", no_args_is_help=True)
+app.add_typer(monitor_app, name="monitor")
 mm_app = typer.Typer(
     help="Thin-file track on SYNTHETIC Ethiopian mobile-money borrowers.", no_args_is_help=True
 )
@@ -41,11 +43,15 @@ def migrate() -> None:
 
 
 @data_app.command("download")
-def data_download(force: Annotated[bool, typer.Option(help="Re-download.")] = False) -> None:
+def data_download(
+    force: Annotated[bool, typer.Option(help="Re-download.")] = False,
+    rejected: Annotated[bool, typer.Option(help="Also the rejected file (255 MB).")] = False,
+) -> None:
     """Download the Lending Club accepted-loans file from Kaggle (393 MB)."""
-    from crisk.data.kaggle import download
+    from crisk.data.kaggle import ACCEPTED, REJECTED, download
 
-    for path in download(RAW_DIR, force=force):
+    files = (ACCEPTED, REJECTED) if rejected else (ACCEPTED,)
+    for path in download(RAW_DIR, files=files, force=force):
         typer.echo(f"{path} ({path.stat().st_size / 2**20:.0f} MB)")
 
 
@@ -261,3 +267,36 @@ def mm_score(
     if rows.empty:
         raise typer.BadParameter(f"no synthetic borrower with id in {borrower_id}")
     typer.echo(score(bundle, rows.reset_index(drop=True)).round(4).to_string(index=False))
+
+
+@data_app.command("rejected")
+def data_rejected() -> None:
+    """Stream the rejected-applications CSV into parquet (shared columns, split windows)."""
+    from crisk.data.kaggle import REJECTED
+    from crisk.monitor.rejected import rejected_to_parquet
+
+    report = rejected_to_parquet(REJECTED.local_path(RAW_DIR), INTERIM_DIR / "rejected.parquet")
+    typer.echo(f"rows read {report.rows_read:,}, kept {report.rows_written:,}: {report.by_split}")
+
+
+@monitor_app.command("stability")
+def monitor_stability() -> None:
+    """PSI of scores and key features by issue quarter, and the characteristic report."""
+    from crisk.monitor.run import save_stability, stability_run
+
+    res = stability_run(PROCESSED_DIR / "model_table.parquet", MODELS_DIR)
+    save_stability(res, REPORTS_DIR)
+    typer.echo(res.summary.round(3).to_string(index=False))
+    typer.echo("\n" + res.latest_csr.round(2).to_string(index=False))
+
+
+@monitor_app.command("reject")
+def monitor_reject() -> None:
+    """Reject inference (fuzzy augmentation, parcelling) on the shared columns."""
+    from crisk.monitor import reject
+
+    split = reject.accepted_issue_split(RAW_PARQUET)
+    res = reject.run(PROCESSED_DIR / "model_table.parquet", INTERIM_DIR / "rejected.parquet", split)
+    reject.save(res, REPORTS_DIR)
+    for table in (res.population, res.models, res.decisions, res.flips, res.extras["reject_psi"]):
+        typer.echo(table.round(4).to_string(index=False) + "\n")

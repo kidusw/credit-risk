@@ -1,0 +1,5 @@
+split,population,n,fico_range_low,dti,loan_amnt,kgb_score
+valid,in-range rejects,327504,0.0292,0.2551,0.3047,0.0426
+valid,all rejects,1707168,3.3177,1.4640,0.5173,
+test,in-range rejects,74954,0.0051,0.1485,0.2898,0.0352
+test,all rejects,3393541,11.1551,1.0124,0.3811,

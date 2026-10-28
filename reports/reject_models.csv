@@ -1,0 +1,7 @@
+model,split,accepted_auc,accepted_mean_pd,accepted_default_rate,reject_mean_pd,best_iteration
+kgb (accepted only),valid,0.6217,0.1608,0.1440,0.1550,1406
+fuzzy augmentation,valid,0.6217,0.1616,0.1440,0.1548,1207
+parcelling,valid,0.6139,0.2573,0.1440,0.2697,31
+kgb (accepted only),test,0.6233,0.1584,0.1524,0.1672,1406
+fuzzy augmentation,test,0.6239,0.1592,0.1524,0.1670,1207
+parcelling,test,0.6180,0.2571,0.1524,0.2855,31

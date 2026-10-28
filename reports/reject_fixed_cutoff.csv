@@ -1,0 +1,7 @@
+model,split,kgb_cutoff,approval_share_at_kgb_cutoff
+kgb (accepted only),valid,0.1366,0.3987
+fuzzy augmentation,valid,0.1366,0.4000
+parcelling,valid,0.1366,0.0000
+kgb (accepted only),test,0.2242,0.8627
+fuzzy augmentation,test,0.2242,0.8600
+parcelling,test,0.2242,0.2920

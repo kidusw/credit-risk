@@ -1,0 +1,7 @@
+model,split,in_range_approval_share,accepted_approved,rejects_approved,approved_slots_to_rejects,bad_rate_approved_accepted,expected_bad_rate_approved_rejects,policy_reject_weight
+kgb (accepted only),valid,0.3987,0.3536,0.4286,0.6464,0.0883,0.1015,935141.1095
+fuzzy augmentation,valid,0.3987,0.3484,0.4320,0.6516,0.0873,0.1015,935141.1095
+parcelling,valid,0.3987,0.4088,0.3920,0.5912,0.0958,0.1955,935141.1095
+kgb (accepted only),test,0.8626,0.8709,0.8105,0.1291,0.1392,0.1430,2229591.5884
+fuzzy augmentation,test,0.8626,0.8702,0.8152,0.1298,0.1389,0.1433,2229591.5884
+parcelling,test,0.8626,0.8826,0.7371,0.1174,0.1407,0.2417,2229591.5884
