@@ -1,6 +1,6 @@
 item,value
-valid_auc_gain_from_state,0.0012125159285951703
-valid_return_gain_from_state,0.0005357539982429466
+valid_auc_gain_from_state,0.0007100867093096097
+valid_return_gain_from_state,6.138384929427199e-05
 min_auc_gain,0.005
 min_return_gain,0.001
 keep_addr_state,False

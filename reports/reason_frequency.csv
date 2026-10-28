@@ -1,20 +1,20 @@
 code,text,actionable,first_reason_share,in_top_reasons_share
-R18,Lending Club's risk grade and interest rate for the loan,False,0.562,0.7957
-R09,Too many accounts opened recently,True,0.1982,0.5763
-R06,Income too low or not verified,True,0.0773,0.4831
-R05,Loan amount too high for income,True,0.0626,0.3837
-R14,Length of employment too short,True,0.0281,0.1099
-R07,Revolving credit utilisation too high,True,0.0218,0.16
-R17,State of residence,True,0.0123,0.2535
-R12,Level of existing balances and credit limits,True,0.011,0.1798
-R16,Loan purpose,True,0.008,0.0628
-R04,Debt-to-income ratio too high,True,0.0046,0.3562
-R11,Number or mix of credit accounts,True,0.0044,0.1035
-R02,Delinquency on credit accounts,True,0.0039,0.0668
-R08,Too many recent credit inquiries,True,0.0029,0.1516
-R10,Length of credit history too short,True,0.0023,0.1605
-R13,No mortgage or home ownership,True,0.0002,0.1086
-R03,"Public records, collections or charge-offs on file",True,0.0002,0.0235
-R01,Credit score too low,True,0.0,0.0244
+R18,Lending Club's risk grade and interest rate for the loan,False,0.6008,0.8423
+R09,Too many accounts opened recently,True,0.187,0.5875
+R06,Income too low or not verified,True,0.0625,0.5059
+R05,Loan amount too high for income,True,0.0607,0.3927
+R14,Length of employment too short,True,0.0315,0.115
+R07,Revolving credit utilisation too high,True,0.0202,0.1612
+R12,Level of existing balances and credit limits,True,0.0131,0.2046
+R16,Loan purpose,True,0.0075,0.0639
+R11,Number or mix of credit accounts,True,0.0055,0.1267
+R04,Debt-to-income ratio too high,True,0.0041,0.3772
+R02,Delinquency on credit accounts,True,0.0028,0.0684
+R08,Too many recent credit inquiries,True,0.0026,0.171
+R10,Length of credit history too short,True,0.0011,0.1564
+R13,No mortgage or home ownership,True,0.0006,0.1821
+R03,"Public records, collections or charge-offs on file",True,0.0,0.0172
+R01,Credit score too low,True,0.0,0.0279
 R15,Loan term too long,True,0.0,0.0
-R19,Listing and application type,False,0.0,0.0
+R17,State of residence,True,0.0,0.0
+R19,Listing and application type,False,0.0,0.0001

@@ -106,11 +106,11 @@ and down-cast dtypes to fit in 8 GB of RAM.
 
 ## Phase 5 — Explainability + fairness
 
-- [ ] SHAP for the champion: global importance, dependence plots, per-applicant
+- [x] SHAP for the champion: global importance, dependence plots, per-applicant
       explanations
-- [ ] Adverse-action reason codes: top 4 reasons for each decline, mapped to plain-
+- [x] Adverse-action reason codes: top 4 reasons for each decline, mapped to plain-
       language text ("Debt-to-income ratio too high")
-- [ ] Fairness on the attributes Lending Club has (state, home ownership, employment
+- [x] Fairness on the attributes Lending Club has (state, home ownership, employment
       length, income band) plus a zip-code-as-proxy discussion. Protected attributes
       (sex, race, age) are **not available**; this is stated, not worked around
 - **Metrics:** approval-rate ratio between groups (demographic parity), true-positive

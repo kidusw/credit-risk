@@ -1,11 +1,11 @@
 policy,attribute,groups,groups_used,min_air,min_air_group,groups_below_0_8,max_tpr_gap,max_abs_citl,approval_spread,default_rate_spread
-champion PD <= 0.156,addr_state,50,40,0.6027,MS,16,-0.2945,0.0458,0.3182,0.107
-champion PD <= 0.156,home_ownership,4,3,0.7535,RENT,1,-0.1655,0.0237,0.1824,0.0586
-champion PD <= 0.156,employment_length,5,5,0.6229,missing,1,-0.2547,0.0349,0.2705,0.0843
-champion PD <= 0.156,income_band,5,5,0.3986,< 40k,2,-0.5103,0.0237,0.533,0.0989
-champion PD <= 0.156,zip3,907,77,0.5862,104xx,32,-0.3078,0.0378,0.3377,0.1065
-LC grades A-B,addr_state,50,40,0.7888,HI,1,-0.13,0.0458,0.1383,0.107
-LC grades A-B,home_ownership,4,3,0.829,RENT,0,-0.0976,0.0237,0.109,0.0586
-LC grades A-B,employment_length,5,5,0.852,missing,0,-0.0762,0.0349,0.091,0.0843
-LC grades A-B,income_band,5,5,0.5532,< 40k,2,-0.3121,0.0237,0.3229,0.0989
-LC grades A-B,zip3,907,77,0.6627,104xx,12,-0.2287,0.0378,0.2312,0.1065
+champion PD <= 0.161,addr_state,50,40,0.8055,HI,0,-0.129,0.0575,0.1405,0.107
+champion PD <= 0.161,home_ownership,4,3,0.7531,RENT,1,-0.1692,0.0234,0.1862,0.0586
+champion PD <= 0.161,employment_length,5,5,0.6148,missing,1,-0.2642,0.0335,0.2811,0.0843
+champion PD <= 0.161,income_band,5,5,0.4034,< 40k,2,-0.5101,0.0251,0.5338,0.0989
+champion PD <= 0.161,zip3,907,77,0.6478,104xx,20,-0.2734,0.0512,0.2828,0.1065
+LC grades A-B,addr_state,50,40,0.7888,HI,1,-0.13,0.0575,0.1383,0.107
+LC grades A-B,home_ownership,4,3,0.829,RENT,0,-0.0976,0.0234,0.109,0.0586
+LC grades A-B,employment_length,5,5,0.852,missing,0,-0.0762,0.0335,0.091,0.0843
+LC grades A-B,income_band,5,5,0.5532,< 40k,2,-0.3121,0.0251,0.3229,0.0989
+LC grades A-B,zip3,907,77,0.6627,104xx,12,-0.2287,0.0512,0.2312,0.1065

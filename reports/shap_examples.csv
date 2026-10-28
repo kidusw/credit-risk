@@ -1,25 +1,25 @@
-applicant,id,pd,decision,feature,value,shap,reason,base_value
-approved (median approved PD),74586669,0.083,approve,sub_grade,A1,-0.5678,Lending Club's risk grade and interest rate for the loan,-1.9225
-approved (median approved PD),74586669,0.083,approve,int_rate,5.32,-0.3495,Lending Club's risk grade and interest rate for the loan,-1.9225
-approved (median approved PD),74586669,0.083,approve,emp_length_years,nan,0.2765,Length of employment too short,-1.9225
-approved (median approved PD),74586669,0.083,approve,dti,26.75,0.1306,Debt-to-income ratio too high,-1.9225
-approved (median approved PD),74586669,0.083,approve,grade,A,-0.119,Lending Club's risk grade and interest rate for the loan,-1.9225
-approved (median approved PD),74586669,0.083,approve,total_bc_limit,2000.0,0.1188,Level of existing balances and credit limits,-1.9225
-approved (median approved PD),74586669,0.083,approve,acc_open_past_24mths,2.0,-0.0838,Too many accounts opened recently,-1.9225
-approved (median approved PD),74586669,0.083,approve,mo_sin_old_rev_tl_op,382.0,-0.082,Length of credit history too short,-1.9225
-"declined, just over the cutoff",59472635,0.1562,decline,tot_coll_amt,465.0,0.0867,"Public records, collections or charge-offs on file",-1.9225
-"declined, just over the cutoff",59472635,0.1562,decline,loan_to_income,0.17021276,-0.086,Loan amount too high for income,-1.9225
-"declined, just over the cutoff",59472635,0.1562,decline,sub_grade,C2,0.0856,Lending Club's risk grade and interest rate for the loan,-1.9225
-"declined, just over the cutoff",59472635,0.1562,decline,annual_inc,47000.0,0.0797,Income too low or not verified,-1.9225
-"declined, just over the cutoff",59472635,0.1562,decline,term_months,36,-0.0788,Loan term too long,-1.9225
-"declined, just over the cutoff",59472635,0.1562,decline,acc_open_past_24mths,5.0,0.0769,Too many accounts opened recently,-1.9225
-"declined, just over the cutoff",59472635,0.1562,decline,total_il_high_credit_limit,56906.0,-0.0637,Level of existing balances and credit limits,-1.9225
-"declined, just over the cutoff",59472635,0.1562,decline,fico_range_low,660.0,0.0596,Credit score too low,-1.9225
-declined (90th percentile PD),72877225,0.2597,decline,sub_grade,F1,0.4348,Lending Club's risk grade and interest rate for the loan,-1.9225
-declined (90th percentile PD),72877225,0.2597,decline,loan_to_income,0.09836957,-0.232,Loan amount too high for income,-1.9225
-declined (90th percentile PD),72877225,0.2597,decline,acc_open_past_24mths,10.0,0.1818,Too many accounts opened recently,-1.9225
-declined (90th percentile PD),72877225,0.2597,decline,addr_state,MS,0.1516,State of residence,-1.9225
-declined (90th percentile PD),72877225,0.2597,decline,int_rate,23.13,0.1374,Lending Club's risk grade and interest rate for the loan,-1.9225
-declined (90th percentile PD),72877225,0.2597,decline,total_acc,68.0,-0.1144,Number or mix of credit accounts,-1.9225
-declined (90th percentile PD),72877225,0.2597,decline,term_months,36,-0.1068,Loan term too long,-1.9225
-declined (90th percentile PD),72877225,0.2597,decline,bc_open_to_buy,73.0,0.1022,Revolving credit utilisation too high,-1.9225
+applicant,id,pd,decision,feature,value,shap,reason_group,base_value
+approved (median approved PD),63397125,0.0839,approve,sub_grade,B1,-0.31,Lending Club's risk grade and interest rate for the loan,-1.9133
+approved (median approved PD),63397125,0.0839,approve,annual_inc,40000.0,0.1789,Income too low or not verified,-1.9133
+approved (median approved PD),63397125,0.0839,approve,mths_since_recent_bc,192.0,-0.1716,Too many accounts opened recently,-1.9133
+approved (median approved PD),63397125,0.0839,approve,int_rate,8.18,-0.1213,Lending Club's risk grade and interest rate for the loan,-1.9133
+approved (median approved PD),63397125,0.0839,approve,home_ownership,RENT,0.0867,No mortgage or home ownership,-1.9133
+approved (median approved PD),63397125,0.0839,approve,purpose,credit_card,-0.0713,Loan purpose,-1.9133
+approved (median approved PD),63397125,0.0839,approve,grade,B,-0.0663,Lending Club's risk grade and interest rate for the loan,-1.9133
+approved (median approved PD),63397125,0.0839,approve,dti,12.3,-0.063,Debt-to-income ratio too high,-1.9133
+"declined, just over the cutoff",66035592,0.1609,decline,bc_util,102.2,0.2007,Revolving credit utilisation too high,-1.9133
+"declined, just over the cutoff",66035592,0.1609,decline,annual_inc,85000.0,-0.1394,Income too low or not verified,-1.9133
+"declined, just over the cutoff",66035592,0.1609,decline,bc_open_to_buy,0.0,0.1131,Revolving credit utilisation too high,-1.9133
+"declined, just over the cutoff",66035592,0.1609,decline,dti,25.19,0.105,Debt-to-income ratio too high,-1.9133
+"declined, just over the cutoff",66035592,0.1609,decline,mths_since_recent_bc,3.0,0.102,Too many accounts opened recently,-1.9133
+"declined, just over the cutoff",66035592,0.1609,decline,sub_grade,B4,-0.0917,Lending Club's risk grade and interest rate for the loan,-1.9133
+"declined, just over the cutoff",66035592,0.1609,decline,loan_to_income,0.14117648,-0.0649,Loan amount too high for income,-1.9133
+"declined, just over the cutoff",66035592,0.1609,decline,grade,B,-0.0614,Lending Club's risk grade and interest rate for the loan,-1.9133
+declined (90th percentile PD),69605052,0.2577,decline,sub_grade,D4,0.3376,Lending Club's risk grade and interest rate for the loan,-1.9133
+declined (90th percentile PD),69605052,0.2577,decline,annual_inc,16500.0,0.1933,Income too low or not verified,-1.9133
+declined (90th percentile PD),69605052,0.2577,decline,mths_since_last_record,57.0,-0.1471,"Public records, collections or charge-offs on file",-1.9133
+declined (90th percentile PD),69605052,0.2577,decline,mo_sin_old_rev_tl_op,28.0,0.1413,Length of credit history too short,-1.9133
+declined (90th percentile PD),69605052,0.2577,decline,term_months,36,-0.1064,Loan term too long,-1.9133
+declined (90th percentile PD),69605052,0.2577,decline,int_rate,17.97,0.0966,Lending Club's risk grade and interest rate for the loan,-1.9133
+declined (90th percentile PD),69605052,0.2577,decline,dti,25.89,0.0873,Debt-to-income ratio too high,-1.9133
+declined (90th percentile PD),69605052,0.2577,decline,total_bc_limit,2600.0,0.0773,Level of existing balances and credit limits,-1.9133

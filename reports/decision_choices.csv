@@ -1,8 +1,8 @@
 choice,value
 lc_grade_profit,G
 lc_grade_return,B
-gbm_with_pricing_profit,0.40173442811384236
-gbm_with_pricing_return,0.15620463019874908
+gbm_with_pricing_profit,0.39216178982979494
+gbm_with_pricing_return,0.16090190118682623
 scorecard_with_pricing_profit,0.5361266423435864
 scorecard_with_pricing_return,0.13087328796269934
 calibration_gbm_with_pricing,platt
